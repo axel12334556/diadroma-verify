@@ -16,8 +16,8 @@ const proof = JSON.parse(fs.readFileSync('tests/valid_single.json', 'utf8'));
   }
   const raw = Buffer.from(proof.ots_proof_b64, 'base64');
   await assert.rejects(parse(raw.subarray(0, raw.length - 5).toString('base64')));
-  await assert.rejects(parse('AA=='));
-  await assert.rejects(parse('%%%'));
+  assert.throws(() => parse('AA=='));
+  assert.throws(() => parse('%%%'));
   const tampered = Buffer.from(raw); tampered[33] ^= 1;
   const changed = await parse(tampered.toString('base64'));
   assert.notEqual(changed.root, proof.merkle_root);
