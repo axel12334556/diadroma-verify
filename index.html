@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://blockstream.info/api/;">
+    <title>Diadroma - Vérification Indépendante</title>
+    <link rel="stylesheet" href="style/style.css">
+</head>
+<body>
+    <h1>Vérification de Preuve</h1>
+    <p class="description">Déposez votre fichier <code>proof.json</code> ci-dessous pour vérifier l'ancrage blockchain indépendamment de Diadroma.</p>
+    
+    <div class="box" id="dropzone">
+        <p>Glissez-déposez le fichier de preuve ici<br>ou cliquez pour sélectionner.</p>
+        <input type="file" id="fileInput" accept=".json" style="display: none;">
+    </div>
+
+    <div id="result"></div>
+    
+    <a href="how-it-works.html" class="footer-link">Comment ça marche ?</a>
+
+    <script src="verify.js"></script>
+    <script>
+        const dropBox = document.getElementById('dropzone');
+        
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropBox.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropBox.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropBox.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropBox.classList.remove('dragover');
+            }, false);
+        });
+    </script>
+</body>
+</html>
