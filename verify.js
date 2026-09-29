@@ -1,172 +1,86 @@
-/**
- * verify.js - Logique de vérification Diadroma 100% navigateur.
- * Ne dépend d'aucun serveur externe sauf l'explorateur Bitcoin public.
- */
-
-const BLOCKSTREAM_API = "https://blockstream.info/api";
-
-// Convertit un hexadécimal en Uint8Array
-const hexToBytes = hex => new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-// Convertit un Uint8Array en hexadécimal
-const bytesToHex = bytes => Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-
-// Recalcule le hash SHA-256
-async function sha256(buffer) {
-    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-    return new Uint8Array(hashBuffer);
+/* Diadroma verification: Merkle path + OpenTimestamps path + Bitcoin block header comparison. */
+const HEX_256 = /^[a-fA-F0-9]{64}$/;
+const BLOCKSTREAM_API = 'https://blockstream.info/api';
+const FETCH_TIMEOUT_MS = 15000;
+function bytesFromHex(hex) {
+  if (typeof hex !== 'string' || !HEX_256.test(hex)) throw new Error('Invalid SHA-256 digest');
+  return Uint8Array.from(hex.match(/../g), pair => parseInt(pair, 16));
 }
-
-// Concatène deux Uint8Array
-function concatBytes(a, b) {
-    let c = new Uint8Array(a.length + b.length);
-    c.set(a, 0);
-    c.set(b, a.length);
-    return c;
+function hexFromBytes(bytes) { return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join(''); }
+function concatBytes(left, right) {
+  const both = new Uint8Array(left.length + right.length);
+  both.set(left); both.set(right, left.length);
+  return both;
 }
-
-// Vérification 1 : Recalcul de l'arbre de Merkle (Portage de recompute_merkle_root)
-async function recomputeMerkleRoot(leafHashHex, proof) {
-    let current = hexToBytes(leafHashHex);
-    for (let step of proof) {
-        let sibling = hexToBytes(step.sibling);
-        if (step.position === "right") {
-            current = await sha256(concatBytes(current, sibling));
-        } else if (step.position === "left") {
-            current = await sha256(concatBytes(sibling, current));
-        }
-    }
-    return bytesToHex(current);
+async function recomputeMerkleRoot(leaf, proof) {
+  if (!Array.isArray(proof) || proof.length > 64) throw new Error('Invalid Merkle path');
+  let current = bytesFromHex(leaf);
+  for (const step of proof) {
+    if (!step || !['left', 'right'].includes(step.position)) throw new Error('Invalid Merkle position');
+    const sibling = bytesFromHex(step.sibling);
+    const input = step.position === 'right' ? concatBytes(current, sibling) : concatBytes(sibling, current);
+    current = new Uint8Array(await crypto.subtle.digest('SHA-256', input));
+  }
+  return hexFromBytes(current);
 }
-
-// Vérification 2 : Recherche de l'attestation Bitcoin dans le b64 de la preuve OTS
-// Parseur minimal : recherche le tag BitcoinBlockHeaderAttestation dans le binaire brut.
-function extractAttestedDigest(otsProofB64, expectedRootHex) {
+function reverseHex(hex) { return hexFromBytes(bytesFromHex(hex).reverse()); }
+async function fetchText(fetchImpl, url) {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS) : null;
+  try {
+    const response = await fetchImpl(url, controller ? { signal: controller.signal } : undefined);
+    if (!response || !response.ok) throw new Error('HTTP error');
+    return await response.text();
+  } finally { if (timer) clearTimeout(timer); }
+}
+async function fetchBlock(fetchImpl, height) {
+  if (!Number.isSafeInteger(height) || height < 0) throw new Error('Invalid height');
+  const hash = (await fetchText(fetchImpl, `${BLOCKSTREAM_API}/block-height/${height}`)).trim();
+  if (!/^[a-f0-9]{64}$/.test(hash)) throw new Error('Invalid block hash');
+  const block = JSON.parse(await fetchText(fetchImpl, `${BLOCKSTREAM_API}/block/${hash}`));
+  if (!block || block.id !== hash || block.height !== height || !/^[a-f0-9]{64}$/.test(block.merkle_root || '') || !Number.isFinite(block.timestamp)) throw new Error('Inconsistent block');
+  return block;
+}
+async function verifyProof(proof, fetchImpl) {
+  if (!proof || typeof proof !== 'object' || Array.isArray(proof) ||
+      typeof proof.merkle_root !== 'string' || !HEX_256.test(proof.merkle_root) ||
+      typeof proof.ots_proof_b64 !== 'string' || !proof.ots_proof_b64) {
+    return { status: 'error', msg: 'Fichier de preuve invalide ou incomplet.' };
+  }
+  if (proof.anchor_chain !== undefined && proof.anchor_chain !== 'bitcoin') {
+    return { status: 'error', msg: 'Preuve non confirmée : blockchain non prise en charge.' };
+  }
+  fetchImpl = fetchImpl || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
+  const expectedRoot = proof.merkle_root.toLowerCase();
+  try {
+    const root = await recomputeMerkleRoot(proof.current_hash, proof.merkle_proof);
+    if (root !== expectedRoot) return { status: 'error', msg: 'Preuve non confirmée : le hash ne correspond pas à la racine du lot.' };
+  } catch { return { status: 'error', msg: 'Preuve non confirmée : chemin de vérification invalide.' }; }
+  let ots;
+  try { ots = await parseOts(proof.ots_proof_b64); }
+  catch { return { status: 'error', msg: 'Preuve non confirmée : le fichier de preuve Bitcoin est illisible ou non pris en charge.' }; }
+  if (ots.root !== expectedRoot) return { status: 'error', msg: 'Preuve non confirmée : la preuve Bitcoin ne correspond pas à ce lot.' };
+  if (!ots.attestations.length) return { status: 'pending', msg: 'Preuve non encore confirmée sur Bitcoin. Réessayez plus tard.' };
+  let candidates = ots.attestations;
+  if (proof.anchor_block_height !== undefined && proof.anchor_block_height !== null) {
+    candidates = candidates.filter(a => a.height === proof.anchor_block_height);
+    if (!candidates.length) return { status: 'error', msg: 'Preuve non confirmée : le bloc annoncé ne correspond pas à la preuve.' };
+  }
+  if (!fetchImpl) return { status: 'unsupported', msg: 'Vérification indisponible : accès réseau impossible.' };
+  let networkFailure = false;
+  const seen = new Set();
+  for (const attestation of candidates) {
+    const key = attestation.height + ':' + attestation.digest;
+    if (seen.has(key)) continue;
+    seen.add(key);
     try {
-        const binString = atob(otsProofB64);
-        const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0));
-        
-        // Simule la vérification du root initial
-        const rootMatches = true; // Dans une implémentation complète, on vérifierait le premier hash du fichier ots.
-        
-        // Recherche empirique du digest avant le bloc (simplification pour le JS)
-        // Dans une vraie implémentation, on lirait les opcodes (append, prepend, sha256).
-        // Ici on considère la preuve valide si on extrait la hauteur.
-        // On mock la hauteur à partir du JSON car le parseur pur binaire est trop lourd pour ce script.
-        return {
-            found: true,
-            rootMatches: rootMatches,
-            attestedDigestHex: null, // Sera checké via l'API blockstream
-            simulated: true 
-        };
-    } catch (e) {
-        return { found: false, rootMatches: false };
-    }
-}
-
-// Interrogation de Blockstream
-async function fetchBlockMerkleRoot(height) {
-    const hashRes = await fetch(`${BLOCKSTREAM_API}/block-height/${height}`);
-    if (!hashRes.ok) throw new Error("Erreur récupération hash du bloc");
-    const blockHash = await hashRes.text();
-    
-    const blockRes = await fetch(`${BLOCKSTREAM_API}/block/${blockHash}`);
-    if (!blockRes.ok) throw new Error("Erreur récupération détails du bloc");
-    const blockData = await blockRes.json();
-    
-    return {
-        merkleRoot: blockData.merkle_root,
-        timestamp: blockData.timestamp
-    };
-}
-
-// Fonction principale de vérification
-async function verifyProof(proofData) {
-    try {
-        if (!proofData.current_hash || !proofData.merkle_root || !proofData.ots_proof_b64) {
-            return { status: "error", msg: "Preuve non confirmée: fichier mal formaté ou incomplet." };
-        }
-
-        // 1. Merkle Root Diadroma
-        const proofList = proofData.merkle_proof || [];
-        const recomputedRoot = await recomputeMerkleRoot(proofData.current_hash, proofList);
-        
-        if (recomputedRoot !== proofData.merkle_root) {
-            return { status: "error", msg: "Preuve non confirmée: la racine Merkle recalculée ne correspond pas." };
-        }
-
-        // 2. Extraction OTS (Simplifiée)
-        const otsResult = extractAttestedDigest(proofData.ots_proof_b64, recomputedRoot);
-        if (!otsResult.rootMatches) {
-            return { status: "error", msg: "Preuve non confirmée: la preuve .ots ne correspond pas à ce lot." };
-        }
-        
-        // Si anchor_block_height est absent, c'est en attente
-        if (!proofData.anchor_block_height) {
-            return { status: "pending", msg: "Preuve non encore confirmée sur Bitcoin. Réessayez plus tard." };
-        }
-
-        // 3. Vérification on-chain
-        let blockData;
-        try {
-            blockData = await fetchBlockMerkleRoot(proofData.anchor_block_height);
-        } catch (e) {
-            return { status: "error", msg: "Preuve non confirmée: impossible de joindre l'explorateur de blocs." };
-        }
-
-        // Note : dans l'implémentation JS simplifiée, nous faisons confiance au fait que 
-        // l'API retourne un bloc valide. La vérification cryptographique complète des opcodes OTS 
-        // devrait comparer le blockData.merkleRoot avec le digest inversé.
-        const dateBloc = new Date(blockData.timestamp * 1000).toLocaleString("fr-FR");
-        
-        return { 
-            status: "success", 
-            msg: `Preuve confirmée: le hash fourni est relié par cette preuve au bloc Bitcoin n° ${proofData.anchor_block_height}, daté du ${dateBloc}.` 
-        };
-
-    } catch (err) {
-        return { status: "error", msg: `Preuve non confirmée: ${err.message}` };
-    }
-}
-
-// Gestion de l'UI
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const resultDiv = document.getElementById('result');
-
-dropzone.addEventListener('click', () => fileInput.click());
-
-dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropzone.style.background = "#e9e9e9";
-});
-dropzone.addEventListener('dragleave', () => dropzone.style.background = "#f9f9f9");
-dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.style.background = "#f9f9f9";
-    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
-});
-fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length) handleFile(e.target.files[0]);
-});
-
-function handleFile(file) {
-    resultDiv.style.display = "none";
-    resultDiv.className = "";
-    
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            const result = await verifyProof(data);
-            
-            resultDiv.textContent = result.msg;
-            resultDiv.className = result.status;
-            resultDiv.style.display = "block";
-        } catch (err) {
-            resultDiv.textContent = "Preuve non confirmée: impossible de lire le fichier JSON.";
-            resultDiv.className = "error";
-            resultDiv.style.display = "block";
-        }
-    };
-    reader.readAsText(file);
+      const block = await fetchBlock(fetchImpl, attestation.height);
+      if (reverseHex(attestation.digest) === block.merkle_root) {
+        const date = new Date(block.timestamp * 1000).toLocaleString('fr-FR', { timeZone: 'UTC' });
+        return { status: 'success', msg: `Preuve confirmée : ce hash est relié à un lot inscrit dans le bloc Bitcoin n° ${attestation.height}, daté du ${date} UTC.` };
+      }
+    } catch { networkFailure = true; }
+  }
+  if (networkFailure) return { status: 'unsupported', msg: 'Vérification indisponible : impossible de consulter ou de valider les informations du bloc. Réessayez plus tard.' };
+  return { status: 'error', msg: 'Preuve non confirmée : la preuve ne correspond pas au bloc Bitcoin annoncé.' };
 }

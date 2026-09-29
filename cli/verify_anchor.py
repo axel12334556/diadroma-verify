@@ -1,148 +1,117 @@
+"""Vérification indépendante d'une preuve Diadroma via OpenTimestamps et Blockstream.
+Usage: python cli/verify_anchor.py --input tests/valid_single.json
+Dépendance: pip install opentimestamps
 """
-verify_anchor.py
-
-Outil de vérification indépendant Diadroma en ligne de commande.
-Permet de valider cryptographiquement qu'un hash est bien ancré 
-sur la blockchain Bitcoin via une preuve OpenTimestamps, sans appel
-à un serveur Diadroma.
-
-Dépendances : pip install opentimestamps
-Usage : python verify_anchor.py --input proof.json
-"""
-
 import argparse
 import base64
 import hashlib
 import json
+import re
 import sys
 import urllib.request
-from typing import Optional
 
-BLOCKSTREAM_API = "https://blockstream.info/api"
+API = 'https://blockstream.info/api'
+HEX = re.compile(r'^[0-9a-fA-F]{64}$')
 
-def _sha256(data: bytes) -> bytes:
-    return hashlib.sha256(data).digest()
+def digest(value):
+    if not isinstance(value, str) or not HEX.fullmatch(value):
+        raise ValueError('Digest SHA-256 invalide')
+    return bytes.fromhex(value)
 
-def recompute_merkle_root(leaf_hash_hex: str, proof: list[dict]) -> str:
-    current = bytes.fromhex(leaf_hash_hex)
-    for step in proof:
-        sibling = bytes.fromhex(step["sibling"])
-        position = step["position"]
-        if position == "right":
-            current = _sha256(current + sibling)
-        elif position == "left":
-            current = _sha256(sibling + current)
-        else:
-            raise ValueError(f"Position de preuve invalide : {position!r}")
+def merkle_root(leaf, path):
+    current = digest(leaf)
+    if not isinstance(path, list) or len(path) > 64:
+        raise ValueError('Chemin Merkle invalide')
+    for step in path:
+        if not isinstance(step, dict) or step.get('position') not in ('left', 'right'):
+            raise ValueError('Position Merkle invalide')
+        sibling = digest(step.get('sibling'))
+        data = current + sibling if step['position'] == 'right' else sibling + current
+        current = hashlib.sha256(data).digest()
     return current.hex()
 
-def extract_attested_digest(ots_proof_b64: str, expected_root_hex: str) -> dict:
+def ots_attestations(encoded, expected_root):
     from opentimestamps.core.timestamp import DetachedTimestampFile
     from opentimestamps.core.notary import BitcoinBlockHeaderAttestation
     from opentimestamps.core.serialize import BytesDeserializationContext
-
-    ots_bytes = base64.b64decode(ots_proof_b64)
-    detached = DetachedTimestampFile.deserialize(BytesDeserializationContext(ots_bytes))
-    root_matches_ots_proof = detached.timestamp.msg.hex() == expected_root_hex
-
+    if not isinstance(encoded, str) or len(encoded) > 90000:
+        raise ValueError('Preuve OTS invalide')
+    raw = base64.b64decode(encoded, validate=True)
+    detached = DetachedTimestampFile.deserialize(BytesDeserializationContext(raw))
+    if detached.timestamp.msg.hex() != expected_root:
+        raise ValueError('Racine OTS différente')
+    found = []
     for msg, attestation in detached.timestamp.all_attestations():
         if isinstance(attestation, BitcoinBlockHeaderAttestation):
-            return {
-                "found": True,
-                "root_matches_ots_proof": root_matches_ots_proof,
-                "attested_digest_hex": msg.hex(),
-                "block_height": attestation.height,
-            }
-    return {"found": False, "root_matches_ots_proof": root_matches_ots_proof}
+            if len(msg) != 32 or not isinstance(attestation.height, int) or attestation.height < 0:
+                raise ValueError('Attestation Bitcoin invalide')
+            found.append((msg.hex(), attestation.height))
+    return found
 
-def fetch_block_at_height(height: int) -> Optional[dict]:
+def fetch_block(height):
+    with urllib.request.urlopen(f'{API}/block-height/{height}', timeout=15) as response:
+        block_hash = response.read().decode('ascii').strip()
+    if not HEX.fullmatch(block_hash):
+        raise ValueError('Identifiant du bloc invalide')
+    with urllib.request.urlopen(f'{API}/block/{block_hash}', timeout=15) as response:
+        block = json.loads(response.read().decode('utf-8'))
+    if (not isinstance(block, dict) or block.get('id') != block_hash or
+            block.get('height') != height or not isinstance(block.get('merkle_root'), str) or
+            not HEX.fullmatch(block['merkle_root'])):
+        raise ValueError('Bloc incohérent')
+    return block
+
+def verify(proof, fetcher=fetch_block, extractor=ots_attestations):
+    result = {'on_chain_confirmed': False, 'conclusion': 'Preuve non confirmée.'}
     try:
-        hash_url = f"{BLOCKSTREAM_API}/block-height/{height}"
-        with urllib.request.urlopen(hash_url, timeout=15) as response:
-            block_hash = response.read().decode("utf-8").strip()
-
-        block_url = f"{BLOCKSTREAM_API}/block/{block_hash}"
-        with urllib.request.urlopen(block_url, timeout=15) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except Exception as exc:
-        print(f"[avertissement] Impossible d'interroger Blockstream : {exc}", file=sys.stderr)
-        return None
-
-def verify(proof_data: dict) -> dict:
-    leaf_hash = proof_data["current_hash"]
-    expected_root = proof_data["merkle_root"]
-    proof = proof_data.get("merkle_proof", [])
-    chain = proof_data.get("anchor_chain", "bitcoin")
-    ots_proof_b64 = proof_data.get("ots_proof_b64")
-
-    recomputed_root = recompute_merkle_root(leaf_hash, proof)
-    root_matches = recomputed_root == expected_root
-
-    result = {
-        "on_chain_confirmed": False,
-        "conclusion": ""
-    }
-
-    if not root_matches:
-        result["conclusion"] = "Preuve non confirmée: la racine Merkle recalculée ne correspond pas."
-        return result
-
-    if chain != "bitcoin":
-        result["conclusion"] = f"Preuve non confirmée: blockchain '{chain}' non supportée."
-        return result
-
-    if not ots_proof_b64:
-        result["conclusion"] = "Preuve non confirmée: fichier .ots manquant."
-        return result
-
-    try:
-        ots_result = extract_attested_digest(ots_proof_b64, recomputed_root)
+        if not isinstance(proof, dict) or proof.get('anchor_chain', 'bitcoin') != 'bitcoin':
+            result['conclusion'] = 'Preuve non confirmée : blockchain non prise en charge.'
+            return result
+        expected = digest(proof['merkle_root']).hex()
+        if merkle_root(proof['current_hash'], proof['merkle_proof']) != expected:
+            result['conclusion'] = 'Preuve non confirmée : le hash ne correspond pas à la racine du lot.'
+            return result
+        attestations = extractor(proof['ots_proof_b64'], expected)
+        if not attestations:
+            result['conclusion'] = 'Preuve non encore confirmée sur Bitcoin.'
+            return result
+        declared_height = proof.get('anchor_block_height')
+        if declared_height is not None:
+            attestations = [(d, h) for d, h in attestations if h == declared_height]
+            if not attestations:
+                result['conclusion'] = 'Preuve non confirmée : le bloc annoncé est incohérent.'
+                return result
+        failed_network = False
+        for attested, height in dict.fromkeys(attestations):
+            try:
+                block = fetcher(height)
+                if bytes.fromhex(attested)[::-1].hex() == block['merkle_root']:
+                    result['on_chain_confirmed'] = True
+                    result['conclusion'] = f'Preuve confirmée: le hash fourni est relié par cette preuve au bloc Bitcoin n° {height}.'
+                    return result
+            except (OSError, TimeoutError, ValueError, KeyError, TypeError):
+                failed_network = True
+        result['conclusion'] = ('Vérification indisponible : explorateur injoignable ou bloc incohérent.' if failed_network
+                                else 'Preuve non confirmée : digest différent de la racine du bloc.')
     except ImportError:
-        result["conclusion"] = "Preuve non confirmée: dépendance opentimestamps manquante."
-        return result
-
-    if not ots_result["root_matches_ots_proof"]:
-        result["conclusion"] = "Preuve non confirmée: la preuve .ots ne correspond pas à ce lot."
-        return result
-
-    if not ots_result["found"]:
-        result["conclusion"] = "Preuve non encore confirmée sur Bitcoin. Réessayez plus tard."
-        return result
-
-    block_height = ots_result["block_height"]
-    attested_digest_hex = ots_result["attested_digest_hex"]
-    block = fetch_block_at_height(block_height)
-    
-    if block is None:
-        result["conclusion"] = "Preuve non confirmée: impossible de joindre l'explorateur de blocs."
-        return result
-
-    block_merkle_root = block.get("merkle_root", "")
-    reversed_attested = bytes.fromhex(attested_digest_hex)[::-1].hex()
-    
-    if reversed_attested == block_merkle_root:
-        result["on_chain_confirmed"] = True
-        result["conclusion"] = f"Preuve confirmée: le hash fourni est relié par cette preuve au bloc Bitcoin n° {block_height}."
-    else:
-        result["conclusion"] = "Preuve non confirmée: le digest attesté ne correspond pas à la racine du bloc."
-
+        result['conclusion'] = 'Vérification indisponible : paquet opentimestamps absent.'
+    except (KeyError, TypeError, ValueError, OverflowError, base64.binascii.Error):
+        result['conclusion'] = 'Preuve non confirmée : fichier ou preuve cryptographique invalide.'
     return result
 
 def main():
-    parser = argparse.ArgumentParser(description="Vérification CLI Diadroma")
-    parser.add_argument("--input", required=True, help="Fichier JSON de preuve")
+    parser = argparse.ArgumentParser(description='Vérification CLI Diadroma')
+    parser.add_argument('--input', required=True, help='Chemin du JSON de preuve')
     args = parser.parse_args()
-
     try:
-        with open(args.input, "r", encoding="utf-8") as f:
-            proof_data = json.load(f)
-    except Exception as e:
-        print(f"Preuve non confirmée: erreur de lecture du fichier ({e})")
-        sys.exit(1)
+        with open(args.input, encoding='utf-8') as f:
+            proof = json.load(f)
+        result = verify(proof)
+    except (OSError, ValueError):
+        print('Preuve non confirmée : impossible de lire ce fichier JSON.')
+        return 1
+    print(result['conclusion'])
+    return 0 if result['on_chain_confirmed'] else 1
 
-    result = verify(proof_data)
-    print(result["conclusion"])
-    sys.exit(0 if result["on_chain_confirmed"] else 1)
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    sys.exit(main())

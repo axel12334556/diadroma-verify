@@ -1,0 +1,33 @@
+name: Vérification hors réseau
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [fix/fail-closed-ui, main]
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tests JavaScript sans réseau
+        run: |
+          node tests/merkle.test.cjs
+          node tests/ots.test.cjs
+          node tests/height.test.cjs
+          node tests/chain.test.cjs
+          node tests/verify.test.cjs
+      - name: Tests Python sans réseau
+        run: |
+          python -m py_compile cli/verify_anchor.py
+          python -m unittest discover -s tests -p 'test_cli_height.py' -v

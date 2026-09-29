@@ -1,0 +1,30 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const { webcrypto } = require('node:crypto');
+const ctx = vm.createContext({ crypto: webcrypto, Uint8Array, atob, TextEncoder, AbortController, setTimeout, clearTimeout, Date, Number, Set });
+vm.runInContext(fs.readFileSync('ots.js', 'utf8'), ctx);
+vm.runInContext(fs.readFileSync('verify.js', 'utf8'), ctx);
+const proof = JSON.parse(fs.readFileSync('tests/valid_single.json', 'utf8'));
+const good = '673b88a49932c2d9d62bf9ed62c283a10a6b1c84c04ba7843dab92299c9a48b7';
+const root = 'b7489a9c2992ab3d84a74bc0841c6b0aa183c262edf92bd6d9c23299a4883b67';
+const hash = 'ab'.repeat(32);
+const requests = [];
+ctx.parseOts = async () => ({ root: proof.merkle_root, attestations: [{ digest: '00'.repeat(32), height: 969033 }, { digest: good, height: 969034 }] });
+const fakeFetch = async url => {
+  requests.push(url);
+  if (url.includes('/block-height/')) return { ok: true, text: async () => hash };
+  const height = requests[requests.length - 2].endsWith('/969033') ? 969033 : 969034;
+  return { ok: true, text: async () => JSON.stringify({ id: hash, height, merkle_root: height === 969033 ? '00'.repeat(32) : root, timestamp: 1790000000 }) };
+};
+(async () => {
+  const result = await vm.runInContext('verifyProof', ctx)(proof, fakeFetch);
+  assert.equal(result.status, 'success');
+  assert.match(result.msg, /969034/);
+  assert.doesNotMatch(result.msg, /969033/);
+  assert.equal(requests.length, 2);
+  const wrong = await vm.runInContext('verifyProof', ctx)({ ...proof, anchor_block_height: 969035 }, fakeFetch);
+  assert.equal(wrong.status, 'error');
+  assert.equal(requests.length, 2);
+  console.log('JS: seule l’attestation à la hauteur déclarée est acceptée OK');
+})().catch(e => { console.error(e); process.exitCode = 1; });

@@ -1,42 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://blockstream.info/api/;">
-    <title>Diadroma - Vérification Indépendante</title>
-    <link rel="stylesheet" href="style/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://blockstream.info; base-uri 'none'; object-src 'none'; form-action 'none'">
+<title>Diadroma — Vérification de preuve</title>
+<link rel="stylesheet" href="style/style.css">
+<script src="ots.js" defer></script>
+<script src="verify.js" defer></script>
+<script src="ui.js" defer></script>
 </head>
 <body>
-    <h1>Vérification de Preuve</h1>
-    <p class="description">Déposez votre fichier <code>proof.json</code> ci-dessous pour vérifier l'ancrage blockchain indépendamment de Diadroma.</p>
-    
-    <div class="box" id="dropzone">
-        <p>Glissez-déposez le fichier de preuve ici<br>ou cliquez pour sélectionner.</p>
-        <input type="file" id="fileInput" accept=".json" style="display: none;">
-    </div>
-
-    <div id="result"></div>
-    
-    <a href="how-it-works.html" class="footer-link">Comment ça marche ?</a>
-
-    <script src="verify.js"></script>
-    <script>
-        const dropBox = document.getElementById('dropzone');
-        
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropBox.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropBox.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropBox.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropBox.classList.remove('dragover');
-            }, false);
-        });
-    </script>
+<main class="container">
+<h1>Vérification de preuve</h1>
+<p>Version de test : cette vérification n'a pas encore été validée en conditions réelles. Ne vous appuyez pas encore sur son résultat.</p>
+<label class="dropzone" id="dropzone" for="fileInput">Glissez votre fichier de preuve ici, ou cliquez pour le sélectionner. <span>Fichier JSON · 1 Mo maximum</span></label>
+<input id="fileInput" type="file" accept=".json,application/json" class="visually-hidden">
+<div id="result" role="status" aria-live="polite" hidden></div>
+<p><a href="how-it-works.html">Comment ça marche ?</a></p>
+</main>
 </body>
 </html>
