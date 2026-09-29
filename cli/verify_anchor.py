@@ -38,8 +38,7 @@ def ots_attestations(encoded, expected_root):
         raise ValueError('Preuve OTS invalide')
     raw = base64.b64decode(encoded, validate=True)
     detached = DetachedTimestampFile.deserialize(BytesDeserializationContext(raw))
-    root = detached.timestamp.msg.hex()
-    if root != expected_root:
+    if detached.timestamp.msg.hex() != expected_root:
         raise ValueError('Racine OTS différente')
     found = []
     for msg, attestation in detached.timestamp.all_attestations():
@@ -77,9 +76,11 @@ def verify(proof, fetcher=fetch_block, extractor=ots_attestations):
             result['conclusion'] = 'Preuve non encore confirmée sur Bitcoin.'
             return result
         declared_height = proof.get('anchor_block_height')
-        if declared_height is not None and not any(h == declared_height for _, h in attestations):
-            result['conclusion'] = 'Preuve non confirmée : le bloc annoncé est incohérent.'
-            return result
+        if declared_height is not None:
+            attestations = [(d, h) for d, h in attestations if h == declared_height]
+            if not attestations:
+                result['conclusion'] = 'Preuve non confirmée : le bloc annoncé est incohérent.'
+                return result
         failed_network = False
         for attested, height in dict.fromkeys(attestations):
             try:
