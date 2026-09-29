@@ -6,13 +6,14 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://blockstream.info; base-uri 'none'; object-src 'none'; form-action 'none'">
 <title>Diadroma — Vérification de preuve</title>
 <link rel="stylesheet" href="style/style.css">
+<script src="ots.js" defer></script>
 <script src="verify.js" defer></script>
 <script src="ui.js" defer></script>
 </head>
 <body>
 <main class="container">
 <h1>Vérification de preuve</h1>
-<p>Cette interface ne confirme pas encore les preuves Bitcoin. La vérification cryptographique complète est en cours de développement.</p>
+<p>Version de test : cette vérification n'a pas encore été validée en conditions réelles. Ne vous appuyez pas encore sur son résultat.</p>
 <label class="dropzone" id="dropzone" for="fileInput">Glissez votre fichier de preuve ici, ou cliquez pour le sélectionner. <span>Fichier JSON · 1 Mo maximum</span></label>
 <input id="fileInput" type="file" accept=".json,application/json" class="visually-hidden">
 <div id="result" role="status" aria-live="polite" hidden></div>
