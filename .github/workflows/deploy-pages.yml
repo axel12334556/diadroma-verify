@@ -1,0 +1,64 @@
+name: Publier le vérificateur (manuel)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: diadroma-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Tests JS et Python sans réseau
+        run: |
+          set -euo pipefail
+          node tests/merkle.test.cjs
+          node tests/ots.test.cjs
+          node tests/height.test.cjs
+          node tests/chain.test.cjs
+          node tests/verify.test.cjs
+          python -m py_compile cli/verify_anchor.py
+          python -m unittest discover -s tests -p 'test_cli_height.py' -v
+      - name: Assembler uniquement les fichiers autorisés
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p site/style
+          cp index.html how-it-works.html ots.js ui.js verify.js site/
+          cp style/style.css site/style/
+          for file in index.html how-it-works.html ots.js ui.js verify.js style/style.css; do
+            test -s "site/$file"
+          done
+          diff -u <(printf '%s\n' how-it-works.html index.html ots.js style/style.css ui.js verify.js) <(find site -type f | sed 's#^site/##' | sort)
+          test ! -e site/cli
+          test ! -e site/tests
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
