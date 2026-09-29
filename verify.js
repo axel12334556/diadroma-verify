@@ -28,7 +28,7 @@ async function fetchText(fetchImpl, url) {
   const controller = typeof AbortController === 'function' ? new AbortController() : null;
   const timer = controller ? setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS) : null;
   try {
-    const response = await fetchImpl(url, controller ? { signal: controller.signal } : undefined);
+    const response = await fetchImpl(url, controller ? { signal: controller.signal, cache: 'no-store' } : { cache: 'no-store' });
     if (!response || !response.ok) throw new Error('HTTP error');
     return await response.text();
   } finally { if (timer) clearTimeout(timer); }

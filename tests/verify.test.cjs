@@ -10,8 +10,8 @@ const valid = JSON.parse(fs.readFileSync('tests/valid_single.json', 'utf8'));
 const HASH = 'ab'.repeat(32);
 const BLOCK_ROOT = 'b7489a9c2992ab3d84a74bc0841c6b0aa183c262edf92bd6d9c23299a4883b67';
 const block = (over = {}) => ({ id: HASH, height: 969034, merkle_root: BLOCK_ROOT, timestamp: 1790000000, ...over });
-const mock = (over, calls) => async url => {
-  if (calls) calls.push(url);
+const mock = (over, calls) => async (url, options) => {
+  if (calls) calls.push({ url, options });
   if (url.endsWith('/block-height/969034')) return { ok: true, text: async () => HASH + '\n' };
   if (url.endsWith('/block/' + HASH)) return { ok: true, text: async () => JSON.stringify(block(over)) };
   return { ok: false, text: async () => '' };
@@ -22,7 +22,8 @@ const clone = () => JSON.parse(JSON.stringify(valid));
   const ok = await verify(clone(), mock({}, calls));
   assert.equal(ok.status, 'success');
   assert.match(ok.msg, /969034/);
-  assert.ok(calls.every(u => u.startsWith('https://blockstream.info/api/')));
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every(({ url, options }) => url.startsWith('https://blockstream.info/api/') && options && options.cache === 'no-store'));
   assert.equal((await verify(clone(), mock({ merkle_root: '00'.repeat(32) }))).status, 'error');
   assert.equal((await verify(clone(), mock({ height: 969035 }))).status, 'unsupported');
   assert.equal((await verify(clone(), mock({ id: 'cd'.repeat(32) }))).status, 'unsupported');
@@ -42,5 +43,5 @@ const clone = () => JSON.parse(JSON.stringify(valid));
   assert.equal((await verify(otherRoot, mock({}))).status, 'error');
   const badPath = clone(); badPath.merkle_proof = [{ sibling: '22'.repeat(32), position: 'up' }];
   assert.equal((await verify(badPath, mock({}))).status, 'error');
-  console.log('Verification: succès uniquement si racine, .ots et en-tête de bloc concordent ; échecs testés OK');
+  console.log('Verification: succès uniquement si racine, .ots et en-tête de bloc concordent ; requêtes sans cache OK');
 })().catch(e => { console.error(e); process.exitCode = 1; });
