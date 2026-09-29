@@ -58,14 +58,15 @@ async function verifyProof(proof, fetchImpl) {
   catch { return { status: 'error', msg: 'Preuve non confirmée : le fichier de preuve Bitcoin est illisible ou non pris en charge.' }; }
   if (ots.root !== expectedRoot) return { status: 'error', msg: 'Preuve non confirmée : la preuve Bitcoin ne correspond pas à ce lot.' };
   if (!ots.attestations.length) return { status: 'pending', msg: 'Preuve non encore confirmée sur Bitcoin. Réessayez plus tard.' };
-  if (proof.anchor_block_height !== undefined && proof.anchor_block_height !== null &&
-      !ots.attestations.some(a => a.height === proof.anchor_block_height)) {
-    return { status: 'error', msg: 'Preuve non confirmée : le bloc annoncé ne correspond pas à la preuve.' };
+  let candidates = ots.attestations;
+  if (proof.anchor_block_height !== undefined && proof.anchor_block_height !== null) {
+    candidates = candidates.filter(a => a.height === proof.anchor_block_height);
+    if (!candidates.length) return { status: 'error', msg: 'Preuve non confirmée : le bloc annoncé ne correspond pas à la preuve.' };
   }
   if (!fetchImpl) return { status: 'unsupported', msg: 'Vérification indisponible : accès réseau impossible.' };
   let networkFailure = false;
   const seen = new Set();
-  for (const attestation of ots.attestations) {
+  for (const attestation of candidates) {
     const key = attestation.height + ':' + attestation.digest;
     if (seen.has(key)) continue;
     seen.add(key);
