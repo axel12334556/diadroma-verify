@@ -42,12 +42,15 @@ async function fetchBlock(fetchImpl, height) {
   return block;
 }
 async function verifyProof(proof, fetchImpl) {
-  fetchImpl = fetchImpl || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
   if (!proof || typeof proof !== 'object' || Array.isArray(proof) ||
       typeof proof.merkle_root !== 'string' || !HEX_256.test(proof.merkle_root) ||
       typeof proof.ots_proof_b64 !== 'string' || !proof.ots_proof_b64) {
     return { status: 'error', msg: 'Fichier de preuve invalide ou incomplet.' };
   }
+  if (proof.anchor_chain !== undefined && proof.anchor_chain !== 'bitcoin') {
+    return { status: 'error', msg: 'Preuve non confirmée : blockchain non prise en charge.' };
+  }
+  fetchImpl = fetchImpl || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
   const expectedRoot = proof.merkle_root.toLowerCase();
   try {
     const root = await recomputeMerkleRoot(proof.current_hash, proof.merkle_proof);
