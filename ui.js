@@ -12,6 +12,7 @@ const optFetch = document.getElementById('optFetchBlock');
 const optRoot = document.getElementById('optBlockRoot');
 const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
+const dbomView = document.getElementById('dbomView');
 const memoryBox = document.getElementById('memoryBox');
 const memoryText = document.getElementById('memoryText');
 const memoryBtn = document.getElementById('memoryBtn');
@@ -56,6 +57,35 @@ function renderV2b(result) {
   v2bReport.append(limits);
   v2bReport.hidden = false;
 }
+// Shows the cleartext DBoM only once it has been proven to match the anchored record_hash.
+function renderDbom(result, bytes) {
+  dbomView.replaceChildren(); dbomView.hidden = true;
+  if (!result.dbom_checked || !bytes) return;
+  let view;
+  try { view = ChainDBoMView.describe(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes))); } catch { return; }
+  dbomView.append(el('h2', '', 'Contenu du DBoM'),
+    el('p', 'dbom-note', "Ce contenu correspond à l'empreinte de la preuve : il n'a pas changé depuis son scellement. La preuve ne dit rien de son exactitude. Il est lu dans votre navigateur et n'est envoyé nulle part."));
+  if (!view.recognized) dbomView.append(el('p', 'dbom-note', "Ce fichier n'a pas la structure d'un DBoM v2 : ses champs sont affichés tels quels."));
+  for (const section of view.sections) {
+    dbomView.append(el('h3', '', section.title));
+    if (section.rows) {
+      const list = el('dl', 'dbom-rows');
+      for (const row of section.rows) { const item = el('div'); item.append(el('dt', '', row.label), el('dd', '', row.value)); list.append(item); }
+      dbomView.append(list);
+    }
+    if (section.empty) dbomView.append(el('p', 'dbom-note', section.empty));
+    else if (section.table) {
+      const wrap = el('div', 'dbom-scroll'), table = el('table'), head = el('tr');
+      for (const h of section.table.headers) { const th = el('th', '', h); th.scope = 'col'; head.append(th); }
+      const thead = el('thead'); thead.append(head);
+      const tbody = el('tbody');
+      for (const line of section.table.lines) { const tr = el('tr'); for (const cell of line) tr.append(el('td', '', cell)); tbody.append(tr); }
+      table.append(thead, tbody); wrap.append(table); dbomView.append(wrap);
+    }
+  }
+  if (view.truncated) dbomView.append(el('p', 'dbom-note', 'Affichage limité aux ' + ChainDBoMView.MAX_ROWS + ' premières lignes ; le fichier complet a bien été vérifié.'));
+  dbomView.hidden = false;
+}
 async function runV2b() {
   if (!currentV2b) return;
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
@@ -72,6 +102,7 @@ async function runV2b() {
     output.hidden = true;
     renderV2b(result);
     refreshMemory(result);
+    renderDbom(result, options.dbomBytes);
   } catch { show('error', 'La vérification a échoué de façon inattendue.'); }
 }
 function proofClientId(doc) {
@@ -135,7 +166,7 @@ async function handleFile(file) {
     show('success', "Fiche de clé chargée : l'empreinte est prête. Déposez maintenant le fichier de preuve.");
     return;
   }
-  v2bReport.hidden = true; v2bPanel.hidden = true; currentV2b = null;
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null;
   if (!file || file.size > MAX_FILE_BYTES) { show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { show('error', 'Impossible de lire ce fichier JSON.'); return; }
