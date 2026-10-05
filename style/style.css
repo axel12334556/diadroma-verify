@@ -1,6 +1,6 @@
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { position: relative; margin: 0; font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.5; -webkit-font-smoothing: antialiased; }
 a { color: var(--lien); text-decoration: none; }
 a:hover { text-decoration: underline; }
 :focus-visible { outline: 3px solid var(--menthe); outline-offset: 3px; border-radius: 6px; }
@@ -20,6 +20,17 @@ code { font-family: var(--police-mono); font-size: .9em; }
 h1 { font-size: clamp(2.2rem, 7vw, 3.25rem); margin: 0 0 1rem; }
 h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .container > p { color: var(--texte-doux); font-size: 1.05rem; max-width: 38rem; }
+
+/* Tracés d'itinéraire en fond, sur les côtés des grands écrans (comme sur le site) */
+.fond { position: absolute; top: 52px; left: 0; right: 0; height: 520px; overflow: hidden; pointer-events: none; display: none; }
+.chemin { position: absolute; top: 2rem; width: min(24vw, 340px); height: auto; }
+.chemin-g { left: 0; }
+.chemin-d { right: 0; }
+.chemin path { fill: none; stroke: var(--trait); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.chemin .station { fill: var(--fond); stroke: var(--trait); stroke-width: 6; }
+.chemin .arrivee { fill: var(--menthe); stroke: none; }
+@media (min-width: 1000px) { .fond { display: block; } }
+.container { position: relative; }
 
 /* Dépôt du fichier */
 .dropzone { display: block; margin: 2rem 0; padding: 3rem 1.5rem; text-align: center; font-size: 1.1rem; letter-spacing: -.01em; background: var(--fond-2); border: 2px dashed var(--trait); border-radius: var(--rayon); cursor: pointer; transition: border-color .2s; }
@@ -45,7 +56,7 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .options .check-option { display: flex; gap: .6rem; align-items: flex-start; color: var(--texte-doux); }
 .options button, #memoryBtn { margin-top: 1.25rem; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; }
 .options button:hover { background: var(--marine-survol); }
-.notice { margin: .8rem 0 0; padding: .8rem 1rem; background: var(--fond); border-left: 3px solid var(--ambre); border-radius: 12px; font-size: .9rem; color: var(--texte-doux); }
+.notice { margin: .8rem 0 0; padding: .8rem 1rem; background: var(--fond); border-radius: 12px; font-size: .9rem; color: var(--texte-doux); }
 .notice p { margin: 0; }
 #memoryBtn { margin-top: .7rem; padding: .45rem 1.1rem; font-size: .88rem; }
 
