@@ -1,0 +1,759 @@
+{
+  "binding_mismatch": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "manifest_link_binding",
+        "link_hash"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "fail",
+        "manifest_link_binding": "fail",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "declared_height_not_in_proof": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "ots_bitcoin_attestation"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "skipped",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "fail",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "declared_status_is_not_believed": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [],
+      "level": "BLOC_CONFIRME",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "extra_anchor_key": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "extra_top_level_key": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "merkle_index_out_of_batch": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "ots_bad_base64": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "ots_commitment"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "skipped",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "skipped",
+        "ots_commitment": "fail",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "ots_commits_to_other_digest": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "ots_commitment",
+        "bitcoin_block"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "fail",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "fail",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "ots_trailing_bytes": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "ots_commitment"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "skipped",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "skipped",
+        "ots_commitment": "fail",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "ots_truncated": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "ots_commitment"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "skipped",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "skipped",
+        "ots_commitment": "fail",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "pending_ots": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [],
+      "level": "ENGAGEMENT_OTS",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "skipped",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "skipped",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "trusted_public_key": "9935c9bf93d97f42e8ccc68734325a2eaf5aee30bb7c05da273fc83ae154d35a"
+    }
+  },
+  "short_public_key": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "swapped_merkle_position": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "merkle_inclusion"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "fail",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "tampered_anchor_digest": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "anchor_digest",
+        "ots_commitment"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "fail",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "fail",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "tampered_manifest": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "manifest_signature"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "fail",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "tampered_merkle_sibling": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "merkle_inclusion"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "fail",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "tampered_signature": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "manifest_signature"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "fail",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "unknown_chain": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "unknown_format": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "uppercase_hash": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "format"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "format": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "valid_5_leaves": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [],
+      "level": "BLOC_CONFIRME",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "valid_no_trust_no_block": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [],
+      "level": "ATTESTATION_BITCOIN",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "skipped",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "skipped"
+      }
+    },
+    "options": {}
+  },
+  "valid_single": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [],
+      "level": "BLOC_CONFIRME",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "e4ea45b3f46e49fb05b83b85e0407d2a286d2c6be7640483a5e0266c823235ea",
+      "trusted_public_key": "4251f9a11db82257f73309221bb7a750ac823e7da7e15649838ad347861c1490"
+    }
+  },
+  "valid_with_dbom": {
+    "expected": {
+      "dbom_checked": true,
+      "failed": [],
+      "level": "BLOC_CONFIRME",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "pass",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "dbom_file": "valid_with_dbom.dbom.json",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "valid_wrong_dbom": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "record_hash_vs_dbom"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "fail",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "dbom_file": "valid_wrong_dbom.dbom.json",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "wrong_batch_number": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "anchor_digest"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "fail",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "wrong_block_root": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "bitcoin_block"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "fail",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "04f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "wrong_link_hash": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "link_hash",
+        "merkle_inclusion"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "fail",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "fail",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "wrong_previous_anchor": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "anchor_digest"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "fail",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "wrong_sequence": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "link_hash"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": true,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "fail",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "pass"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  },
+  "wrong_trusted_key": {
+    "expected": {
+      "dbom_checked": false,
+      "failed": [
+        "signing_key_trust"
+      ],
+      "level": "INVALIDE",
+      "signing_key_authenticated": false,
+      "statuses": {
+        "anchor_digest": "pass",
+        "bitcoin_block": "pass",
+        "format": "pass",
+        "link_hash": "pass",
+        "manifest_link_binding": "pass",
+        "manifest_signature": "pass",
+        "merkle_inclusion": "pass",
+        "ots_bitcoin_attestation": "pass",
+        "ots_commitment": "pass",
+        "record_hash_vs_dbom": "skipped",
+        "signing_key_trust": "fail"
+      }
+    },
+    "options": {
+      "block_merkle_root": "44f9fecbb9043a8de58bbd652d791a9fef2f855d489e86082139802af8b652c4",
+      "trusted_public_key": "0aa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    }
+  }
+}
