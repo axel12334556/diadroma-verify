@@ -3,8 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src https://blockstream.info; base-uri 'none'; object-src 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src https://blockstream.info; base-uri 'none'; object-src 'none'; form-action 'none'">
 <title>Diadroma — Vérification de preuve</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style/tokens.css">
 <link rel="stylesheet" href="style/style.css">
 <script src="ots.js" defer></script>
 <script src="verify.js" defer></script>
@@ -14,6 +16,7 @@
 <script src="ui.js" defer></script>
 </head>
 <body>
+<header class="top"><div class="wrap"><a class="brand" href="https://www.diadroma.fr"><img src="assets/logo-mark.svg" alt="" width="28" height="28">Diadroma</a><nav><a href="how-it-works.html">Comment ça marche</a></nav></div></header>
 <main class="container">
 <h1>Vérification de preuve</h1>
 <p>Version de test : cette vérification n'a pas encore été validée en conditions réelles. Ne vous appuyez pas encore sur son résultat.</p>
@@ -36,7 +39,6 @@
 <button id="rerun" type="button">Relancer la vérification</button>
 </section>
 <div id="v2bReport" hidden></div>
-<p><a href="how-it-works.html">Comment ça marche ?</a></p>
 </main>
 </body>
 </html>
