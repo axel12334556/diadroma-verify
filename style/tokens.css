@@ -1,0 +1,41 @@
+/* Charte Diadroma « itinéraire », identique à celle du site (diadroma-site/style/tokens.css) ; ajout : couleurs d'erreur. */
+:root {
+  color-scheme: light dark;
+  --marine: #0F1E3C;
+  --marine-survol: #1B3263;
+  --fond: #FBFBFD;
+  --fond-2: #F5F5F7;
+  --texte: #1D1D1F;
+  --texte-doux: #6E6E73;
+  --trait: #D2D2D7;
+  --lien: #0066CC;
+  --menthe: #1FB58F;
+  --menthe-texte: #0B7A5E;
+  --ambre: #E8920A;
+  --ambre-texte: #8A5A00;
+  --erreur: #D93025;
+  --erreur-texte: #B3261E;
+  --nav-fond: rgba(251, 251, 253, .82);
+  --police-titre: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --police-texte: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --police-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --rayon: 24px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fond: #000000;
+    --fond-2: #161617;
+    --texte: #F5F5F7;
+    --texte-doux: #A1A1A6;
+    --trait: #3A3A3C;
+    --lien: #2997FF;
+    --menthe-texte: #2BD0A5;
+    --ambre: #F5A524;
+    --ambre-texte: #F5A524;
+    --erreur: #FF6B63;
+    --erreur-texte: #FF6B63;
+    --nav-fond: rgba(0, 0, 0, .78);
+    --marine: #F5F5F7;
+    --marine-survol: #FFFFFF;
+  }
+}
