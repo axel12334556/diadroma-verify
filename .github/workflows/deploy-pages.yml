@@ -32,6 +32,8 @@ jobs:
           node tests/v2b.test.cjs
           node tests/v2b-text.test.cjs
           node tests/v2b-real.test.cjs
+          node tests/keycard.test.cjs
+          node tests/truststore.test.cjs
           python -m py_compile cli/verify_anchor.py
           python -m unittest discover -s tests -p 'test_cli_height.py' -v
       - name: Assembler uniquement les fichiers autorisés
@@ -39,12 +41,15 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p site/style
-          cp index.html how-it-works.html ots.js ui.js verify.js v2b.js v2b-text.js site/
+          cp index.html how-it-works.html ots.js ui.js verify.js v2b.js v2b-text.js trust-store.js site/
           cp style/style.css site/style/
-          for file in index.html how-it-works.html ots.js ui.js verify.js v2b.js v2b-text.js style/style.css; do
+          for file in index.html how-it-works.html ots.js ui.js verify.js v2b.js v2b-text.js trust-store.js style/style.css; do
             test -s "site/$file"
           done
-          diff -u <(printf '%s\n' how-it-works.html index.html ots.js style/style.css ui.js v2b-text.js v2b.js verify.js) <(find site -type f | sed 's#^site/##' | sort)
+          diff -u <(printf '%s\n' how-it-works.html index.html ots.js style/style.css trust-store.js ui.js v2b-text.js v2b.js verify.js) <(find site -type f | sed 's#^site/##' | sort)
+          for src in $(grep -o 'src="[^"]*\.js"' index.html | sed 's/src="//; s/"$//'); do
+            test -s "site/$src" || { echo "script référencé mais non publié : $src"; exit 1; }
+          done
           test ! -e site/cli
           test ! -e site/tests
       - uses: actions/configure-pages@v5
