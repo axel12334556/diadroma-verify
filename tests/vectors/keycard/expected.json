@@ -1,0 +1,68 @@
+{
+  "bad_age_recipient": {
+    "ok": false
+  },
+  "bad_key_id": {
+    "ok": false
+  },
+  "bad_timestamp": {
+    "ok": false
+  },
+  "extra_field": {
+    "ok": false
+  },
+  "fingerprint_and_key_replaced_by_attacker": {
+    "ok": false
+  },
+  "missing_field": {
+    "ok": false
+  },
+  "signature_too_short": {
+    "ok": false
+  },
+  "tampered_field_after_signing": {
+    "ok": false
+  },
+  "tampered_fingerprint": {
+    "ok": false
+  },
+  "tampered_public_key": {
+    "ok": false
+  },
+  "tampered_signature": {
+    "ok": false
+  },
+  "uppercase_client_id": {
+    "ok": false
+  },
+  "uppercase_fingerprint": {
+    "ok": false
+  },
+  "valid": {
+    "facts": {
+      "client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+      "created_at": "2026-10-05T12:00:00Z",
+      "fingerprint_sha256": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+      "signing_key_id": "sign-valid-5-leaves"
+    },
+    "ok": true
+  },
+  "valid_other_client": {
+    "facts": {
+      "client_id": "d9b8458b-6298-442d-a520-8520b95b07f6",
+      "created_at": "2026-10-05T12:00:00Z",
+      "fingerprint_sha256": "d5b488b2d8e8419e325837eaab6161ad086655097d9e11323aa0c2a7a4df52a2",
+      "signing_key_id": "sign-valid-single"
+    },
+    "ok": true
+  },
+  "version_is_boolean": {
+    "ok": false
+  },
+  "wrong_format": {
+    "ok": false
+  },
+  "wrong_version": {
+    "ok": false
+  }
+}

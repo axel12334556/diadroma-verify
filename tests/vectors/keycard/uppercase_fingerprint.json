@@ -1,0 +1,12 @@
+{
+  "age_recipient": "age1t6s23ughhxg4490ukkf5x9a9cpgfl9nn94w898pyctg3palquu2u7s4srl",
+  "client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+  "created_at": "2026-10-05T12:00:00Z",
+  "format": "chaindbom-key-card-v1",
+  "format_version": 1,
+  "recipient_key_id": "age-1",
+  "signature_hex": "a5fbdeee2bd8ef157af91b7804c400eb8ba7fcfc12ff03b8cdf65a972a2ae91ccb6c2d583f3c2b36ea4dd7444ad3b61e10055994bc1574db5917cd2f5d59fc0d",
+  "signing_key_fingerprint_sha256": "DC992588E8AACC084A02B969DFB67D9D48D038F1AAD3B6A6EA8A7DCB5A02F0AB",
+  "signing_key_id": "sign-valid-5-leaves",
+  "signing_public_key_hex": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+}
