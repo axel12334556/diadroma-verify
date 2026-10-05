@@ -33,9 +33,10 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .container { position: relative; }
 
 /* Dépôt du fichier */
-.dropzone { display: block; margin: 2rem 0; padding: 3rem 1.5rem; text-align: center; font-size: 1.1rem; letter-spacing: -.01em; background: var(--fond-2); border: 2px dashed var(--trait); border-radius: var(--rayon); cursor: pointer; transition: border-color .2s; }
+.dropzone { display: block; margin: 2rem 0; padding: 3rem 1.5rem; text-align: center; font-size: 1.1rem; letter-spacing: -.01em; background: var(--fond-2); border: 2px dashed var(--trait); border-radius: var(--rayon); cursor: pointer; transition: border-color .2s, transform .25s cubic-bezier(.2,.8,.2,1), background-color .25s; }
 .dropzone span { display: block; margin-top: .3rem; font-size: .9rem; color: var(--texte-doux); }
-.dropzone:hover, .dropzone.dragover, .dropzone:focus-within { border-color: var(--menthe); }
+.dropzone:hover, .dropzone.dragover, .dropzone:focus-within { border-color: var(--menthe); transform: translateY(-2px); }
+.dropzone.dragover { transform: scale(1.015); background: color-mix(in srgb, var(--menthe) 8%, var(--fond-2)); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
 /* Messages : une station colorée devant le texte */
@@ -54,8 +55,15 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .options input[type=text] { display: block; width: 100%; margin-top: .4rem; padding: .65rem .8rem; font: inherit; font-family: var(--police-mono); font-size: .85rem; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 12px; }
 .options input[type=file] { display: block; margin-top: .4rem; max-width: 100%; color: var(--texte-doux); }
 .options .check-option { display: flex; gap: .6rem; align-items: flex-start; color: var(--texte-doux); }
-.options button, #memoryBtn { margin-top: 1.25rem; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; }
-.options button:hover { background: var(--marine-survol); }
+/* Boutons : pastilles marine, léger relief au survol, enfoncement au clic */
+.options button, #memoryBtn { margin-top: 1.25rem; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background-color .18s; }
+.options button:hover, #memoryBtn:hover { background: var(--marine-survol); transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--marine) 55%, transparent); }
+.options button:active, #memoryBtn:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.options input[type=file]::file-selector-button { margin-right: .75rem; padding: .45rem 1.05rem; font: inherit; font-size: .88rem; font-weight: 500; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 980px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), border-color .18s, box-shadow .18s; }
+.options input[type=file]::file-selector-button:hover { border-color: var(--menthe); transform: translateY(-2px); box-shadow: 0 8px 18px -10px var(--menthe); }
+.options input[type=file]::file-selector-button:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.options input[type=text] { transition: border-color .18s, box-shadow .18s; }
+.options input[type=text]:focus { outline: none; border-color: var(--menthe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--menthe) 25%, transparent); }
 .notice { margin: .8rem 0 0; padding: .8rem 1rem; background: var(--fond); border-radius: 12px; font-size: .9rem; color: var(--texte-doux); }
 .notice p { margin: 0; }
 #memoryBtn { margin-top: .7rem; padding: .45rem 1.1rem; font-size: .88rem; }
@@ -72,3 +80,5 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .check.skipped .mark, .check.skipped .state { color: var(--ambre-texte); }
 .limits { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--trait); font-size: .92rem; color: var(--texte-doux); }
 .limits h2 { color: var(--texte); font-size: 1.1rem; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } .options button:hover, #memoryBtn:hover, .dropzone:hover, .options input[type=file]::file-selector-button:hover { transform: none; } }
