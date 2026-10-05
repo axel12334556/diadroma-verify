@@ -35,6 +35,7 @@ jobs:
           node tests/keycard.test.cjs
           node tests/truststore.test.cjs
           node tests/dbomview.test.cjs
+          node tests/disclosure.test.cjs
           python -m py_compile cli/verify_anchor.py
           python -m unittest discover -s tests -p 'test_cli_height.py' -v
       - name: Assembler uniquement les fichiers autorisés

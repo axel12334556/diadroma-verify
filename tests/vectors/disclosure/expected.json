@@ -1,0 +1,418 @@
+{
+  "now": "2026-12-01T12:00:00Z",
+  "vectors": {
+    "bad_base64": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "card_of_another_supplier": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid_other_client",
+        "fingerprint": "d5b488b2d8e8419e325837eaab6161ad086655097d9e11323aa0c2a7a4df52a2",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "ciphertext_format_armor": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "created_at_not_utc": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "expires_before_created": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "extra_manifest_key": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "extra_package_key": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "format_version_is_boolean": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "format_version_two": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "impossible_date": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "label_empty": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "label_too_long": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "label_with_control_character": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "missing_signature": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "proof_from_another_client": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "e075904d-8920-45d4-977a-2c8317fff529",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "proof_hash_differs": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      }
+    },
+    "purpose_not_in_list": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "record_hash_differs_from_proof": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "signed_by_another_supplier": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_ciphertext": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_created_at_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_disclosure_id_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_expires_at_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_purpose_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_recipient_age_recipient_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_recipient_label_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_record_hash_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_signature": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "tampered_submission_id_after_signing": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "uppercase_disclosure_id": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "valid": {
+      "expected": {
+        "facts": {
+          "created_at": "2026-10-05T12:00:00Z",
+          "expired": false,
+          "expires_at": "2027-01-01T00:00:00Z",
+          "purpose": "audit_independant",
+          "recipient_label": "oem-pilote-1"
+        },
+        "ok": true
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "valid_each_purpose_reparation": {
+      "expected": {
+        "facts": {
+          "created_at": "2026-10-05T12:00:00Z",
+          "expired": false,
+          "expires_at": "2027-01-01T00:00:00Z",
+          "purpose": "reparation_recyclage",
+          "recipient_label": "oem-pilote-1"
+        },
+        "ok": true
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "valid_expired": {
+      "expected": {
+        "facts": {
+          "created_at": "2026-10-05T12:00:00Z",
+          "expired": true,
+          "expires_at": "2026-11-01T00:00:00Z",
+          "purpose": "audit_independant",
+          "recipient_label": "oem-pilote-1"
+        },
+        "ok": true
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "valid_no_expiry_no_label": {
+      "expected": {
+        "facts": {
+          "created_at": "2026-10-05T12:00:00Z",
+          "expired": false,
+          "expires_at": null,
+          "purpose": "audit_independant",
+          "recipient_label": null
+        },
+        "ok": true
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "dc992588e8aacc084a02b969dfb67d9d48d038f1aad3b6a6ea8a7dcb5a02f0ab",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    },
+    "wrong_fingerprint": {
+      "expected": {
+        "ok": false
+      },
+      "options": {
+        "card": "valid",
+        "fingerprint": "0000000000000000000000000000000000000000000000000000000000000000",
+        "proof_client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "proof_record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab"
+      }
+    }
+  }
+}
