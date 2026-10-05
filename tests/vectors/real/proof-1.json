@@ -1,0 +1,49 @@
+{
+  "anchor": {
+    "anchor_block_height": 970014,
+    "anchor_chain": "bitcoin",
+    "anchor_digest": "6253a93bb54ca24a50a520637310634fa7883e2f846796469deea9e9f6143cca",
+    "batch_number": 80,
+    "merkle_index": 0,
+    "merkle_proof": [
+      {
+        "position": "right",
+        "sibling": "3a8ced5625cbf980a3360ac7f84a1a289ded42d323bed8ad10fe14e546d409d7"
+      }
+    ],
+    "merkle_root": "f45bbb7ecf6aacad27153d800a81738c517adde5b48b9710ca73f7b618629d15",
+    "ots_proof_b64": "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",
+    "previous_anchor_digest": null,
+    "record_count": 2,
+    "status": "anchored"
+  },
+  "format": "chaindbom-anchored-proof-v2b",
+  "format_version": 1,
+  "proof_only": {
+    "format": "chaindbom-proof-only-v2b-prototype",
+    "link": {
+      "client_id": "fc90f294-c903-41d5-9ba3-c6196a5c0f43",
+      "client_sequence": 1,
+      "link_hash": "ad79b408b675ac82a2a9c3e27d45a181d011d08c76a40706852a976a6ef10ecb",
+      "previous_link_hash": null,
+      "record_hash": "37e3aded37af3a94f3fde7414f95984c21bd72af29dcd91f01b9dab32f2419c6",
+      "submission_id": "629bbe45-c77d-48ad-9a64-518b6654bdea"
+    },
+    "submission": {
+      "signature_hex": "f04b59c5a124263316f8b2a9b31dfbd0cd8a940055943b9a3e11ee94569cf529ab8ba3e18586a0f22f7c866e78ba3439f8f4210b64d33630cb8ad4e29a00ce09",
+      "signed_manifest": {
+        "ciphertext_format": "age-encryption.org/v1",
+        "ciphertext_hash": "74be15b20b4f2bcfbb5bb879f1361170e522802cb4ce7ca761761535e919a668",
+        "client_id": "fc90f294-c903-41d5-9ba3-c6196a5c0f43",
+        "format_version": 2,
+        "inputs": [],
+        "recipient_key_id": "age-real-ots",
+        "record_hash": "37e3aded37af3a94f3fde7414f95984c21bd72af29dcd91f01b9dab32f2419c6",
+        "signing_key_id": "sign-real-ots",
+        "submission_id": "629bbe45-c77d-48ad-9a64-518b6654bdea"
+      },
+      "signing_public_key_hex": "f0ca7194ee5bdd323608614d69dbd04ac87e13dd3bbe110db6dcc83561c0b97b"
+    },
+    "verification_state": "signature-and-single-link-only;not-anchored"
+  }
+}
