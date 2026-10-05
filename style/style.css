@@ -81,4 +81,19 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .limits { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--trait); font-size: .92rem; color: var(--texte-doux); }
 .limits h2 { color: var(--texte); font-size: 1.1rem; }
 
+/* Contenu du DBoM en clair, affiché seulement s'il correspond à la preuve */
+.dbom { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--trait); }
+.dbom h2 { margin-top: 0; }
+.dbom h3 { font-family: var(--police-titre); font-size: 1.05rem; letter-spacing: -.01em; margin: 1.75rem 0 .5rem; }
+.dbom-note { color: var(--texte-doux); font-size: .92rem; margin: .4rem 0; }
+.dbom-rows { margin: 0; }
+.dbom-rows > div { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr; gap: .25rem 1rem; padding: .55rem 0; border-bottom: 1px solid var(--trait); }
+.dbom-rows dt { color: var(--texte-doux); font-size: .9rem; }
+.dbom-rows dd { margin: 0; overflow-wrap: anywhere; }
+.dbom-scroll { overflow-x: auto; }
+.dbom table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.dbom th { text-align: left; font-weight: 600; color: var(--texte-doux); font-size: .82rem; padding: .5rem .75rem .5rem 0; border-bottom: 1px solid var(--trait); white-space: nowrap; }
+.dbom td { padding: .6rem .75rem .6rem 0; border-bottom: 1px solid var(--trait); vertical-align: top; }
+@media (max-width: 560px) { .dbom-rows > div { grid-template-columns: 1fr; } }
+
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } .options button:hover, #memoryBtn:hover, .dropzone:hover, .options input[type=file]::file-selector-button:hover { transform: none; } }
