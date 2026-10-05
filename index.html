@@ -10,6 +10,7 @@
 <script src="verify.js" defer></script>
 <script src="v2b.js" defer></script>
 <script src="v2b-text.js" defer></script>
+<script src="trust-store.js" defer></script>
 <script src="ui.js" defer></script>
 </head>
 <body>
@@ -26,6 +27,7 @@
 <p id="cardStatus" class="notice" hidden></p>
 <label for="optFingerprint">Ou empreinte de la clé du client, telle que publiée par lui</label>
 <input id="optFingerprint" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux, séparateurs acceptés">
+<div id="memoryBox" class="notice" hidden><p id="memoryText"></p><button id="memoryBtn" type="button"></button></div>
 <label for="optBlockRoot">Racine de Merkle du bloc Bitcoin, lue sur votre explorateur ou votre nœud</label>
 <input id="optBlockRoot" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux">
 <label class="check-option"><input id="optFetchBlock" type="checkbox"> Ou lire le bloc auprès de Blockstream (blockstream.info). Cette requête révèle à Blockstream la hauteur du bloc, jamais le contenu de la preuve. Sans cette case, aucune requête n'est envoyée.</label>

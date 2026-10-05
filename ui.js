@@ -12,7 +12,12 @@ const optFetch = document.getElementById('optFetchBlock');
 const optRoot = document.getElementById('optBlockRoot');
 const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
+const memoryBox = document.getElementById('memoryBox');
+const memoryText = document.getElementById('memoryText');
+const memoryBtn = document.getElementById('memoryBtn');
+const trustStore = ChainDBoMTrustStore.createTrustStore((() => { try { return window.localStorage; } catch { return { getItem() { throw new Error('indisponible'); }, setItem() { throw new Error('indisponible'); } }; } })());
 let currentV2b = null;
+let memorizedFor = null; // client dont l'empreinte vient de la mémoire de cet appareil (null sinon)
 let cardClientId = null; // client of the key card that filled the fingerprint (null when typed by hand)
 
 function show(status, msg) {
@@ -66,10 +71,38 @@ async function runV2b() {
     const result = await ChainDBoMV2b.verify(currentV2b, options);
     output.hidden = true;
     renderV2b(result);
+    refreshMemory(result);
   } catch { show('error', 'La vérification a échoué de façon inattendue.'); }
 }
+function proofClientId(doc) {
+  const m = doc && doc.proof_only && doc.proof_only.submission && doc.proof_only.submission.signed_manifest;
+  return m && typeof m.client_id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(m.client_id) ? m.client_id : null;
+}
+function today() { return new Date().toISOString().slice(0, 10); }
+function currentFingerprint() { try { return ChainDBoMV2b.normalizeFingerprint(optKey.value); } catch { return null; } }
+// Mémoire locale : jamais automatique, et proposée seulement après une authentification réussie de la clé.
+function refreshMemory(result) {
+  memoryBox.hidden = true; memoryBtn.hidden = false;
+  const clientId = proofClientId(currentV2b);
+  if (!clientId) return;
+  const saved = trustStore.get(clientId);
+  const typed = currentFingerprint();
+  if (memorizedFor === clientId && saved && typed === saved.fingerprint) {
+    memoryText.textContent = "Empreinte mémorisée sur cet appareil pour ce client (enregistrée le " + saved.saved_on + "). En cas de doute, comparez-la à celle que le client publie.";
+    memoryBtn.textContent = "Oublier l'empreinte de ce client";
+    memoryBtn.dataset.action = 'forget';
+    memoryBox.hidden = false;
+  } else if (result && result.signing_key_authenticated && typed && (!saved || saved.fingerprint !== typed)) {
+    memoryText.textContent = saved
+      ? "Une autre empreinte est déjà mémorisée pour ce client sur cet appareil. La remplacer seulement si le client a changé de clé et l'a publié lui-même."
+      : "Mémoriser cette empreinte pour ce client, sur cet appareil seulement ? Elle ne quitte pas votre navigateur ; vous pourrez l'oublier à tout moment.";
+    memoryBtn.textContent = saved ? "Remplacer l'empreinte mémorisée" : "Mémoriser pour ce client";
+    memoryBtn.dataset.action = 'remember';
+    memoryBox.hidden = false;
+  }
+}
 function clearCard(message) {
-  cardClientId = null;
+  cardClientId = null; memorizedFor = null;
   optKey.value = '';
   cardStatus.textContent = message || '';
   cardStatus.hidden = !message;
@@ -82,6 +115,7 @@ async function applyKeyCard(data) {
     return false;
   }
   cardClientId = facts.client_id;
+  memorizedFor = null;
   optKey.value = ChainDBoMV2b.formatFingerprint(facts.fingerprint_sha256);
   const signed = facts.self_signature === 'verified' ? 'auto-signature vérifiée' : "auto-signature non vérifiée (ce navigateur ne gère pas Ed25519)";
   cardStatus.textContent = 'Fiche valide (' + signed + ') : client ' + facts.client_id + ', clé ' + facts.signing_key_id + ', créée le ' + facts.created_at
@@ -108,6 +142,12 @@ async function handleFile(file) {
   if (data && data.format === 'chaindbom-anchored-proof-v2b') {
     currentV2b = data;
     v2bPanel.hidden = false;
+    memorizedFor = null;
+    const clientId = proofClientId(data), saved = clientId && trustStore.get(clientId);
+    if (saved && !optKey.value.trim()) { // nothing typed or dropped yet: use what this device remembers
+      optKey.value = ChainDBoMV2b.formatFingerprint(saved.fingerprint);
+      memorizedFor = clientId;
+    }
     await runV2b();
     return;
   }
@@ -124,8 +164,24 @@ optCard.addEventListener('change', async () => {
   if (data === undefined) { clearCard("Fiche de clé illisible ou trop volumineuse (maximum 64 Ko). L'empreinte n'a pas été remplie."); return; }
   if (await applyKeyCard(data) && currentV2b) await runV2b();
 });
-optKey.addEventListener('input', () => { if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
+optKey.addEventListener('input', () => { memorizedFor = null; memoryBox.hidden = true; if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
 optRoot.addEventListener('input', () => { optFetch.disabled = optRoot.value.trim() !== ''; });
 ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('dragover'); }));
 dropzone.addEventListener('drop', event => { if (event.dataTransfer.files.length) handleFile(event.dataTransfer.files[0]); });
+memoryBtn.addEventListener('click', async () => {
+  const clientId = proofClientId(currentV2b);
+  if (!clientId) return;
+  if (memoryBtn.dataset.action === 'forget') {
+    trustStore.forget(clientId); memorizedFor = null; optKey.value = '';
+    await runV2b(); // the field is empty again: the key is no longer authenticated
+    return;
+  }
+  const fingerprint = currentFingerprint();
+  if (!fingerprint || !trustStore.set(clientId, fingerprint, today())) {
+    memoryText.textContent = "Impossible de mémoriser sur cet appareil (stockage indisponible ou plein). La vérification n'est pas affectée.";
+    memoryBtn.hidden = true; return;
+  }
+  memorizedFor = clientId;
+  refreshMemory(null);
+});
