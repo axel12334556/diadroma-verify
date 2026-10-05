@@ -13,12 +13,15 @@ const optRoot = document.getElementById('optBlockRoot');
 const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
 const dbomView = document.getElementById('dbomView');
+const disclosureReport = document.getElementById('disclosureReport');
 const memoryBox = document.getElementById('memoryBox');
 const memoryText = document.getElementById('memoryText');
 const memoryBtn = document.getElementById('memoryBtn');
 const trustStore = ChainDBoMTrustStore.createTrustStore((() => { try { return window.localStorage; } catch { return { getItem() { throw new Error('indisponible'); }, setItem() { throw new Error('indisponible'); } }; } })());
 let currentV2b = null;
 let memorizedFor = null; // client dont l'empreinte vient de la mémoire de cet appareil (null sinon)
+let currentDisclosure = null; // disclosure package dropped by the recipient (never decrypted by this page)
+let cardData = null; // the validated key card object, needed to check the supplier's signature
 let cardClientId = null; // client of the key card that filled the fingerprint (null when typed by hand)
 
 function show(status, msg) {
@@ -86,6 +89,53 @@ function renderDbom(result, bytes) {
   if (view.truncated) dbomView.append(el('p', 'dbom-note', 'Affichage limité aux ' + ChainDBoMView.MAX_ROWS + ' premières lignes ; le fichier complet a bien été vérifié.'));
   dbomView.hidden = false;
 }
+const PURPOSE_TEXT = { audit_independant: 'Audit indépendant', controle_reglementaire: 'Contrôle réglementaire',
+  relation_commerciale: 'Relation commerciale', reparation_recyclage: 'Réparation ou recyclage', autre: 'Autre' };
+const DISCLOSURE_LABELS = { structure: 'Structure du paquet', signing_key_trust: 'Clé du fournisseur authentifiée',
+  authorisation_signature: "Signature de l'autorisation", ciphertext_hash: 'Contenu chiffré intact', proof_binding: 'Rattachement à la preuve', expiry: 'Échéance' };
+const DISCLOSURE_STATUS = { pass: 'Réussi', fail: 'Échec', skipped: 'Non vérifié', warn: 'À noter' };
+const DISCLOSURE_MARK = { pass: '✔', fail: '✘', skipped: '–', warn: '!' };
+function proofFacts() {
+  const m = currentV2b && currentV2b.proof_only && currentV2b.proof_only.submission && currentV2b.proof_only.submission.signed_manifest;
+  return m && typeof m.record_hash === 'string' ? { recordHash: m.record_hash, clientId: m.client_id } : null;
+}
+// Checks the supplier's authorisation. The page never decrypts: it shows who authorised what, and for how long (contractually).
+async function runDisclosure() {
+  disclosureReport.replaceChildren(); disclosureReport.hidden = true;
+  if (!currentDisclosure) return;
+  const proof = proofFacts();
+  let result;
+  try {
+    result = await ChainDBoMV2b.checkDisclosure(currentDisclosure, { keyCard: cardData || undefined, trustedFingerprint: optKey.value.trim() || undefined,
+      proofRecordHash: proof ? proof.recordHash : undefined, proofClientId: proof ? proof.clientId : undefined });
+  } catch { result = { ok: false, checks: [{ id: 'structure', status: 'fail', detail: 'La vérification a échoué de façon inattendue.' }], facts: null }; }
+  disclosureReport.append(el('h2', '', "Autorisation de divulgation"));
+  const banner = el('div', 'banner ' + (result.ok ? 'success' : 'error'));
+  banner.append(el('strong', '', result.ok ? "Autorisation du fournisseur vérifiée" : "Autorisation non vérifiée"),
+    el('p', '', result.ok ? "Le fournisseur a signé cette autorisation avec la clé dont vous avez l'empreinte. Cette page ne déchiffre pas le contenu."
+      : "Ne vous appuyez pas sur ce paquet : l'un des contrôles ci-dessous n'est pas réussi."));
+  disclosureReport.append(banner);
+  if (!cardData) disclosureReport.append(el('p', 'notice', "Déposez la fiche de clé du fournisseur (et son empreinte, publiée par lui) pour vérifier la signature."));
+  if (result.facts) {
+    const rows = el('dl', 'dbom-rows');
+    const add = (label, value) => { const item = el('div'); item.append(el('dt', '', label), el('dd', '', value)); rows.append(item); };
+    add('Finalité', PURPOSE_TEXT[result.facts.purpose] || result.facts.purpose);
+    add('Destinataire (pseudonyme)', result.facts.recipient_label || 'non indiqué');
+    add('Autorisation du', result.facts.created_at);
+    add('Échéance', result.facts.expires_at ? result.facts.expires_at + (result.facts.expired ? ' — dépassée (contractuelle, aucun accès retiré techniquement)' : ' (contractuelle)') : 'non indiquée');
+    disclosureReport.append(rows);
+  }
+  const list = el('ul', 'checks');
+  for (const check of result.checks) {
+    const item = el('li', 'check ' + (check.status === 'warn' ? 'skipped' : check.status));
+    item.append(el('span', 'mark', DISCLOSURE_MARK[check.status]), el('span', 'label', DISCLOSURE_LABELS[check.id] || check.id),
+      el('span', 'state', DISCLOSURE_STATUS[check.status]), el('span', 'detail', check.detail));
+    list.append(item);
+  }
+  disclosureReport.append(list);
+  if (result.ok) disclosureReport.append(el('p', 'dbom-note', "Pour lire le contenu : déchiffrez le paquet avec votre identité age grâce à l'outil de ChainDBoM (dbom_v2_disclosure open), puis déposez le DBoM en clair dans « DBoM en clair » ci-dessus."));
+  disclosureReport.hidden = false;
+}
 async function runV2b() {
   if (!currentV2b) return;
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
@@ -103,6 +153,7 @@ async function runV2b() {
     renderV2b(result);
     refreshMemory(result);
     renderDbom(result, options.dbomBytes);
+    await runDisclosure();
   } catch { show('error', 'La vérification a échoué de façon inattendue.'); }
 }
 function proofClientId(doc) {
@@ -133,7 +184,7 @@ function refreshMemory(result) {
   }
 }
 function clearCard(message) {
-  cardClientId = null; memorizedFor = null;
+  cardClientId = null; memorizedFor = null; cardData = null;
   optKey.value = '';
   cardStatus.textContent = message || '';
   cardStatus.hidden = !message;
@@ -146,6 +197,7 @@ async function applyKeyCard(data) {
     return false;
   }
   cardClientId = facts.client_id;
+  cardData = data;
   memorizedFor = null;
   optKey.value = ChainDBoMV2b.formatFingerprint(facts.fingerprint_sha256);
   const signed = facts.self_signature === 'verified' ? 'auto-signature vérifiée' : "auto-signature non vérifiée (ce navigateur ne gère pas Ed25519)";
@@ -163,13 +215,21 @@ async function handleFile(file) {
   if (data && data.format === ChainDBoMV2b.KEYCARD_FORMAT) { // a key card dropped on the main area: keep the proof, if any
     if (!(await applyKeyCard(data))) { show('error', cardStatus.textContent); return; }
     if (currentV2b) { await runV2b(); return; }
+    if (currentDisclosure) { await runDisclosure(); return; }
     show('success', "Fiche de clé chargée : l'empreinte est prête. Déposez maintenant le fichier de preuve.");
     return;
   }
+  if (data && data.manifest && data.manifest.format === 'chaindbom-disclosure-v1') { // a disclosure package: checked, never decrypted here
+    output.hidden = true;
+    currentDisclosure = data;
+    v2bPanel.hidden = false; // the key card and fingerprint fields live in this panel
+    await runDisclosure();
+    return;
+  }
   v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null;
-  if (!file || file.size > MAX_FILE_BYTES) { show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
+  if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
-  if (data === undefined) { show('error', 'Impossible de lire ce fichier JSON.'); return; }
+  if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }
   if (data && data.format === 'chaindbom-anchored-proof-v2b') {
     currentV2b = data;
     v2bPanel.hidden = false;
@@ -179,23 +239,24 @@ async function handleFile(file) {
       optKey.value = ChainDBoMV2b.formatFingerprint(saved.fingerprint);
       memorizedFor = clientId;
     }
-    await runV2b();
+    await runV2b(); // also refreshes a disclosure package already dropped, now bound to this proof
     return;
   }
+  currentDisclosure = null; disclosureReport.hidden = true;
   try {
     const result = await verifyProof(data);
     show(result.status, result.msg);
   } catch { show('error', 'Impossible de vérifier ce fichier.'); }
 }
 input.addEventListener('change', () => { if (input.files.length) handleFile(input.files[0]); });
-rerun.addEventListener('click', runV2b);
+rerun.addEventListener('click', async () => { if (currentV2b) await runV2b(); else await runDisclosure(); });
 optCard.addEventListener('change', async () => {
   if (!optCard.files.length) { clearCard(); return; }
   const data = await readJson(optCard.files[0], MAX_CARD_BYTES);
   if (data === undefined) { clearCard("Fiche de clé illisible ou trop volumineuse (maximum 64 Ko). L'empreinte n'a pas été remplie."); return; }
-  if (await applyKeyCard(data) && currentV2b) await runV2b();
+  if (await applyKeyCard(data)) { if (currentV2b) await runV2b(); else await runDisclosure(); }
 });
-optKey.addEventListener('input', () => { memorizedFor = null; memoryBox.hidden = true; if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
+optKey.addEventListener('input', () => { if (currentDisclosure && !currentV2b) runDisclosure(); memorizedFor = null; memoryBox.hidden = true; if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
 optRoot.addEventListener('input', () => { optFetch.disabled = optRoot.value.trim() !== ''; });
 ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('dragover'); }));

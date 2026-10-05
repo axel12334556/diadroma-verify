@@ -25,7 +25,7 @@
 <main class="container">
 <h1>Vérification de preuve</h1>
 <p>Version de test : cette vérification n'a pas encore été validée en conditions réelles. Ne vous appuyez pas encore sur son résultat.</p>
-<label class="dropzone" id="dropzone" for="fileInput">Glissez votre fichier de preuve ici, ou cliquez pour le sélectionner. <span>Fichier JSON · 1 Mo maximum</span></label>
+<label class="dropzone" id="dropzone" for="fileInput">Glissez votre fichier de preuve ici, ou cliquez pour le sélectionner. <span>Fichier JSON · 1 Mo maximum · un paquet de divulgation du fournisseur est aussi accepté</span></label>
 <input id="fileInput" type="file" accept=".json,application/json" class="visually-hidden">
 <div id="result" role="status" aria-live="polite" hidden></div>
 <section id="v2bOptions" class="options" hidden>
@@ -45,6 +45,7 @@
 </section>
 <div id="v2bReport" hidden></div>
 <section id="dbomView" class="dbom" hidden></section>
+<section id="disclosureReport" class="dbom" hidden></section>
 </main>
 </body>
 </html>

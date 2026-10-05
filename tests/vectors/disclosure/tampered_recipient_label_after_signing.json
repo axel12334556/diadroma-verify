@@ -1,0 +1,20 @@
+{
+  "ciphertext_b64": "YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IHN5bnRoZXRpYyAob3BhcXVlIGZvciB0aGUgcGFnZSkK160b2sr59RQzPwIGWiNMciOPMTeU7NnUTPokov9xk5XXrRvayvn1FDM/AgZaI0xyI48xN5Ts2dRM+iSi/3GTldetG9rK+fUUMz8CBlojTHIjjzE3lOzZ1Ez6JKL/cZOV160b2sr59RQzPwIGWiNMciOPMTeU7NnUTPokov9xk5XXrRvayvn1FDM/AgZaI0xyI48xN5Ts2dRM+iSi/3GTldetG9rK+fUUMz8CBlojTHIjjzE3lOzZ1Ez6JKL/cZOV160b2sr59RQzPwIGWiNMciOPMTeU7NnUTPokov9xk5XXrRvayvn1FDM/AgZaI0xyI48xN5Ts2dRM+iSi/3GTlQ==",
+  "manifest": {
+    "ciphertext_format": "age-v1-binary",
+    "ciphertext_hash": "4e94ab7873e393929ded2c927ec2f21700332eff5801dc95f70e8046467a526e",
+    "client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+    "created_at": "2026-10-05T12:00:00Z",
+    "disclosure_id": "c64bdba8-114a-49ea-a327-1dcaa3e3c52f",
+    "expires_at": "2027-01-01T00:00:00Z",
+    "format": "chaindbom-disclosure-v1",
+    "format_version": 1,
+    "purpose": "audit_independant",
+    "recipient_age_recipient": "age1hj5xm23gnfedpxdams45h2ggl9tmv4ec5jmjehact7mg677f5eqxtycdrr",
+    "recipient_label": "autre-label",
+    "record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab",
+    "signing_key_id": "sign-valid-5-leaves",
+    "submission_id": "74da12e8-7988-4e05-95dc-2524b7d109ad"
+  },
+  "signature_hex": "37c86ad6c1dc80e0dfca7fe08595716a941da29ff9dd2a0106ce5776932c27e54f294c988788d833c323fb5ebab3d123d564a79cc5e3ffd7ba7173559ab66101"
+}

@@ -312,6 +312,112 @@
       fingerprint_sha256: card.signing_key_fingerprint_sha256, created_at: card.created_at, self_signature: selfSignature };
   }
 
+  // ------------------------------------------------------------------ disclosure package (chaindbom-disclosure-v1)
+  // The page never decrypts. It checks the supplier's authorisation: strict structure, trusted key (key card whose
+  // fingerprint matches the one the supplier published), Ed25519 signature, ciphertext hash, binding to the proof,
+  // and the contractual expiry. Mirrors tests/tools/reference/disclosure_reference.py.
+  const DISCLOSURE_FORMAT = 'chaindbom-disclosure-v1';
+  const DISCLOSURE_DOMAIN = enc.encode('ChainDBoM:v2:disclosure\u0000');
+  const PURPOSES = ['audit_independant', 'controle_reglementaire', 'relation_commerciale', 'reparation_recyclage', 'autre'];
+  const DISCLOSURE_PACKAGE_KEYS = ['manifest', 'signature_hex', 'ciphertext_b64'];
+  const DISCLOSURE_MANIFEST_KEYS = ['format', 'format_version', 'disclosure_id', 'client_id', 'signing_key_id', 'submission_id', 'record_hash',
+    'recipient_age_recipient', 'recipient_label', 'purpose', 'created_at', 'expires_at', 'ciphertext_format', 'ciphertext_hash'];
+  const MAX_DISCLOSURE_CIPHERTEXT = 16 * 1024 * 1024;
+
+  function fromBase64(text, name) {
+    if (!/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(text)) throw new FormatError(name + " n'est pas du base64 valide");
+    const raw = root.atob(text);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function parseUtc(value, name) {
+    if (typeof value !== 'string' || !TIMESTAMP_RE.test(value)) throw new FormatError(name + ' doit être en UTC, par exemple 2026-10-05T12:00:00Z');
+    const time = Date.parse(value);
+    const parts = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/).slice(1).map(Number);
+    const check = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5]));
+    if (Number.isNaN(time) || check.getUTCMonth() !== parts[1] - 1 || check.getUTCDate() !== parts[2] || parts[3] > 23 || parts[4] > 59 || parts[5] > 59) {
+      throw new FormatError(name + " n'est pas une date réelle");
+    }
+    return time;
+  }
+
+  function validateDisclosureManifest(m) {
+    exactKeys(m, DISCLOSURE_MANIFEST_KEYS, 'manifeste de divulgation');
+    if (m.format !== DISCLOSURE_FORMAT || m.format_version !== 1) throw new FormatError('format de divulgation non pris en charge');
+    for (const field of ['disclosure_id', 'client_id', 'submission_id']) {
+      if (typeof m[field] !== 'string' || !UUID_RE.test(m[field])) throw new FormatError(field + ' doit être un UUID canonique en minuscules');
+    }
+    if (typeof m.signing_key_id !== 'string' || !KEY_ID_RE.test(m.signing_key_id)) throw new FormatError('signing_key_id invalide');
+    for (const field of ['record_hash', 'ciphertext_hash']) {
+      if (typeof m[field] !== 'string' || !HEX64.test(m[field])) throw new FormatError(field + ' doit compter 64 caractères hexadécimaux minuscules');
+    }
+    if (typeof m.recipient_age_recipient !== 'string' || !AGE_RECIPIENT_RE.test(m.recipient_age_recipient)) throw new FormatError('clé age du destinataire invalide');
+    if (m.recipient_label !== null && !(typeof m.recipient_label === 'string' && m.recipient_label.length >= 1 && m.recipient_label.length <= 64
+      && m.recipient_label === m.recipient_label.trim() && !/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(m.recipient_label))) {
+      throw new FormatError('recipient_label doit compter 1 à 64 caractères imprimables, ou être null');
+    }
+    if (PURPOSES.indexOf(m.purpose) < 0) throw new FormatError("la finalité n'est pas dans la liste fermée");
+    const created = parseUtc(m.created_at, 'created_at');
+    if (m.expires_at !== null && parseUtc(m.expires_at, 'expires_at') < created) throw new FormatError('expires_at précède created_at');
+    if (m.ciphertext_format !== 'age-v1-binary') throw new FormatError('format de contenu chiffré non pris en charge');
+  }
+
+  async function checkDisclosure(pkg, options) {
+    options = options || {};
+    const checks = [];
+    const fail = (id, detail) => { checks.push({ id, status: 'fail', detail }); return { ok: false, checks, failed: [id], facts: null }; };
+    let manifest, ciphertext, signature;
+    try {
+      exactKeys(pkg, DISCLOSURE_PACKAGE_KEYS, 'paquet de divulgation');
+      validateDisclosureManifest(pkg.manifest);
+      manifest = pkg.manifest;
+      if (typeof pkg.signature_hex !== 'string' || !/^[0-9a-f]{128}$/.test(pkg.signature_hex)) throw new FormatError('la signature doit compter 128 caractères hexadécimaux minuscules');
+      if (typeof pkg.ciphertext_b64 !== 'string' || pkg.ciphertext_b64.length > MAX_DISCLOSURE_CIPHERTEXT * 2) throw new FormatError('contenu chiffré invalide ou trop volumineux');
+      ciphertext = fromBase64(pkg.ciphertext_b64, 'ciphertext_b64');
+      signature = fromHex(pkg.signature_hex, 'signature');
+    } catch (error) { return fail('structure', (error && error.message) || 'structure invalide'); }
+    checks.push({ id: 'structure', status: 'pass', detail: 'format chaindbom-disclosure-v1, structure valide' });
+
+    let card;
+    try {
+      if (!options.keyCard) throw new Error("la fiche de clé du fournisseur est nécessaire pour vérifier la signature");
+      card = await checkKeyCard(options.keyCard);
+      const wanted = normalizeFingerprint(options.trustedFingerprint || '');
+      if (wanted !== card.fingerprint_sha256) throw new Error("l'empreinte de la fiche diffère de celle que le fournisseur a publiée");
+      if (manifest.client_id !== card.client_id || manifest.signing_key_id !== card.signing_key_id) throw new Error('la fiche de clé ne correspond pas au fournisseur nommé dans le paquet');
+    } catch (error) { return fail('signing_key_trust', (error && error.message) || 'clé non authentifiée'); }
+    checks.push({ id: 'signing_key_trust', status: 'pass', detail: "clé du fournisseur authentifiée par l'empreinte fournie" });
+
+    try {
+      const key = await root.crypto.subtle.importKey('raw', fromHex(options.keyCard.signing_public_key_hex, 'clé'), { name: 'Ed25519' }, false, ['verify']);
+      const ok = await root.crypto.subtle.verify({ name: 'Ed25519' }, key, signature, concat(DISCLOSURE_DOMAIN, enc.encode(jcs(manifest))));
+      if (!ok) throw new Error("signature de l'autorisation invalide");
+    } catch (error) {
+      if (error && error.name === 'NotSupportedError') { checks.push({ id: 'authorisation_signature', status: 'skipped', detail: "ce navigateur ne gère pas Ed25519 : signature non vérifiée" }); return { ok: false, checks, failed: [], facts: null }; }
+      return fail('authorisation_signature', (error && error.message) || 'signature invalide');
+    }
+    checks.push({ id: 'authorisation_signature', status: 'pass', detail: "signature Ed25519 de l'autorisation valide" });
+
+    if (hex(await sha256(ciphertext)) !== manifest.ciphertext_hash) return fail('ciphertext_hash', "l'empreinte du contenu chiffré ne correspond pas à celle signée");
+    checks.push({ id: 'ciphertext_hash', status: 'pass', detail: 'SHA-256 du contenu chiffré == ciphertext_hash' });
+
+    if (options.proofRecordHash === undefined || options.proofRecordHash === null) {
+      checks.push({ id: 'proof_binding', status: 'skipped', detail: "aucune preuve ancrée fournie : la divulgation n'est pas rattachée à une preuve" });
+    } else {
+      if (options.proofRecordHash !== manifest.record_hash) return fail('proof_binding', "le record_hash de la divulgation diffère de celui de la preuve fournie");
+      if (options.proofClientId && options.proofClientId !== manifest.client_id) return fail('proof_binding', 'le fournisseur de la divulgation diffère de celui de la preuve');
+      checks.push({ id: 'proof_binding', status: 'pass', detail: 'record_hash et fournisseur identiques à ceux de la preuve' });
+    }
+    const now = options.now && typeof options.now.getTime === 'function' ? options.now.getTime() : Date.now();
+    const expired = manifest.expires_at !== null && parseUtc(manifest.expires_at, 'expires_at') < now;
+    checks.push({ id: 'expiry', status: expired ? 'warn' : 'pass', detail: manifest.expires_at === null ? "pas d'échéance indiquée"
+      : expired ? "échéance contractuelle dépassée : aucun accès n'est retiré techniquement" : "échéance contractuelle non atteinte" });
+    return { ok: true, checks, failed: [], facts: { purpose: manifest.purpose, recipient_label: manifest.recipient_label,
+      created_at: manifest.created_at, expires_at: manifest.expires_at, expired } };
+  }
+
   // ------------------------------------------------------------------ verification
   async function verify(doc, options) {
     options = options || {};
@@ -444,5 +550,5 @@
       signing_key_authenticated: status.signing_key_trust === 'pass', dbom_checked: status.record_hash_vs_dbom === 'pass' };
   }
 
-  root.ChainDBoMV2b = { verify, checkKeyCard, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
+  root.ChainDBoMV2b = { verify, checkKeyCard, checkDisclosure, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
