@@ -28,6 +28,7 @@ jobs:
           node tests/chain.test.cjs
           node tests/verify.test.cjs
           node tests/v2b.test.cjs
+          node tests/v2b-text.test.cjs
       - name: Vecteurs v2b identiques au vérificateur Python de référence
         run: |
           python -m pip install cryptography rfc8785
