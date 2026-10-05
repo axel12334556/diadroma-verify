@@ -23,6 +23,13 @@
   const MAX_OTS_BYTES = 1000000, MAX_OTS_NODES = 50000, MAX_OTS_DEPTH = 300;
   const LEVELS = ['INVALIDE', 'INTEGRITE', 'ENGAGEMENT_OTS', 'ATTESTATION_BITCOIN', 'BLOC_CONFIRME'];
   const HEX64 = /^[0-9a-f]{64}$/;
+  const KEYCARD_FORMAT = 'chaindbom-key-card-v1';
+  const KEYCARD_DOMAIN = enc.encode('ChainDBoM:v2:key-card\0');
+  const KEYCARD_KEYS = ['format', 'format_version', 'client_id', 'signing_key_id', 'signing_public_key_hex',
+    'signing_key_fingerprint_sha256', 'recipient_key_id', 'age_recipient', 'created_at', 'signature_hex'];
+  const KEY_ID_RE = /^[A-Za-z0-9._-]{1,128}$/;
+  const AGE_RECIPIENT_RE = /^age1[0-9a-z]{58}$/;
+  const TIMESTAMP_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
   class FormatError extends Error {}
@@ -263,6 +270,48 @@
     return cleaned;
   }
 
+  // ------------------------------------------------------------------ key card (chaindbom-key-card-v1)
+  // Strict validation of a client's self-signed public key card, mirroring the Python reference
+  // (chaindbom/key_card.py verify_key_card). Returns the facts to compare; throws on any defect.
+  // The card proves POSSESSION of the key, never the client's identity: that comes from the channel
+  // on which the auditor obtained the card.
+  function formatFingerprint(value) {
+    return normalizeFingerprint(value).replace(/(.{8})(?=.)/g, '$1 ');
+  }
+  async function checkKeyCard(card) {
+    exactKeys(card, KEYCARD_KEYS, 'fiche de clé');
+    if (card.format !== KEYCARD_FORMAT || card.format_version !== 1) throw new FormatError('format de fiche de clé non pris en charge');
+    for (const field of KEYCARD_KEYS.slice(2)) {
+      if (typeof card[field] !== 'string') throw new FormatError(field + ' doit être une chaîne de caractères');
+    }
+    if (!UUID_RE.test(card.client_id)) throw new FormatError("client_id doit être un UUID canonique en minuscules");
+    if (!KEY_ID_RE.test(card.signing_key_id) || !KEY_ID_RE.test(card.recipient_key_id)) throw new FormatError("identifiant de clé invalide");
+    if (!HEX64.test(card.signing_public_key_hex) || !HEX64.test(card.signing_key_fingerprint_sha256)) {
+      throw new FormatError("la clé publique et l'empreinte doivent compter 64 caractères hexadécimaux minuscules");
+    }
+    if (!/^[0-9a-f]{128}$/.test(card.signature_hex)) throw new FormatError('la signature doit compter 128 caractères hexadécimaux minuscules');
+    if (!AGE_RECIPIENT_RE.test(card.age_recipient)) throw new FormatError('destinataire age invalide');
+    if (!TIMESTAMP_RE.test(card.created_at)) throw new FormatError('created_at doit être en UTC, par exemple 2026-10-05T12:00:00Z');
+    const publicKey = fromHex(card.signing_public_key_hex, 'signing_public_key_hex');
+    if (hex(await sha256(publicKey)) !== card.signing_key_fingerprint_sha256) throw new FormatError("l'empreinte ne correspond pas à la clé publique");
+    const unsigned = {};
+    for (const key of KEYCARD_KEYS) if (key !== 'signature_hex') unsigned[key] = card[key];
+    const message = concat(KEYCARD_DOMAIN, enc.encode(jcs(unsigned)));
+    let selfSignature = 'verified';
+    try {
+      const key = await root.crypto.subtle.importKey('raw', publicKey, { name: 'Ed25519' }, false, ['verify']);
+      if (!(await root.crypto.subtle.verify({ name: 'Ed25519' }, key, fromHex(card.signature_hex, 'signature_hex'), message))) {
+        throw new Error('auto-signature de la fiche invalide');
+      }
+    } catch (error) {
+      if (error && error.name === 'NotSupportedError') selfSignature = 'unsupported';
+      else if (error && error.message === 'auto-signature de la fiche invalide') throw error;
+      else throw new Error('clé publique de la fiche invalide');
+    }
+    return { client_id: card.client_id, signing_key_id: card.signing_key_id,
+      fingerprint_sha256: card.signing_key_fingerprint_sha256, created_at: card.created_at, self_signature: selfSignature };
+  }
+
   // ------------------------------------------------------------------ verification
   async function verify(doc, options) {
     options = options || {};
@@ -296,6 +345,9 @@
       const problems = [];
       const proofKey = hex(parts.publicKey);
       if (trustedKey && proofKey !== String(trustedKey).trim().toLowerCase()) problems.push('la clé de la preuve diffère de la clé de confiance fournie');
+      if (options.trustedClientId && manifest.client_id !== String(options.trustedClientId).trim().toLowerCase()) {
+        problems.push("l'identifiant client de la fiche de clé diffère de celui de la preuve");
+      }
       if (trustedFingerprint) {
         try {
           if (hex(await sha256(parts.publicKey)) !== normalizeFingerprint(trustedFingerprint)) problems.push("l'empreinte SHA-256 de la clé de la preuve diffère de l'empreinte de confiance fournie");
@@ -392,5 +444,5 @@
       signing_key_authenticated: status.signing_key_trust === 'pass', dbom_checked: status.record_hash_vs_dbom === 'pass' };
   }
 
-  root.ChainDBoMV2b = { verify, jcs, parseOts, normalizeFingerprint, LEVELS };
+  root.ChainDBoMV2b = { verify, checkKeyCard, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

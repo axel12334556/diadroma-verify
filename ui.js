@@ -1,15 +1,19 @@
 const MAX_FILE_BYTES = 1024 * 1024;
+const MAX_CARD_BYTES = 64 * 1024;
 const dropzone = document.getElementById('dropzone');
 const input = document.getElementById('fileInput');
 const output = document.getElementById('result');
 const v2bPanel = document.getElementById('v2bOptions');
 const v2bReport = document.getElementById('v2bReport');
 const optKey = document.getElementById('optFingerprint');
+const optCard = document.getElementById('optKeyCard');
+const cardStatus = document.getElementById('cardStatus');
 const optFetch = document.getElementById('optFetchBlock');
 const optRoot = document.getElementById('optBlockRoot');
 const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
 let currentV2b = null;
+let cardClientId = null; // client of the key card that filled the fingerprint (null when typed by hand)
 
 function show(status, msg) {
   output.textContent = msg;
@@ -49,7 +53,8 @@ function renderV2b(result) {
 }
 async function runV2b() {
   if (!currentV2b) return;
-  const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, blockMerkleRoot: optRoot.value.trim() || undefined,
+  const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
+    blockMerkleRoot: optRoot.value.trim() || undefined,
     fetchBlock: optFetch.checked && !optRoot.value.trim() };
   if (optDbom.files.length) {
     const file = optDbom.files[0];
@@ -63,12 +68,43 @@ async function runV2b() {
     renderV2b(result);
   } catch { show('error', 'La vérification a échoué de façon inattendue.'); }
 }
+function clearCard(message) {
+  cardClientId = null;
+  optKey.value = '';
+  cardStatus.textContent = message || '';
+  cardStatus.hidden = !message;
+}
+// Takes a parsed key card, checks it (format, fingerprint, self-signature) and puts its fingerprint in the field.
+async function applyKeyCard(data) {
+  let facts;
+  try { facts = await ChainDBoMV2b.checkKeyCard(data); } catch (error) {
+    clearCard('Fiche de clé refusée : ' + ((error && error.message) || 'fichier inutilisable') + ". L'empreinte n'a pas été remplie.");
+    return false;
+  }
+  cardClientId = facts.client_id;
+  optKey.value = ChainDBoMV2b.formatFingerprint(facts.fingerprint_sha256);
+  const signed = facts.self_signature === 'verified' ? 'auto-signature vérifiée' : "auto-signature non vérifiée (ce navigateur ne gère pas Ed25519)";
+  cardStatus.textContent = 'Fiche valide (' + signed + ') : client ' + facts.client_id + ', clé ' + facts.signing_key_id + ', créée le ' + facts.created_at
+    + ". Cette fiche ne vaut confiance que si vous l'avez obtenue sur le canal du client lui-même, pas auprès de ChainDBoM ni de la personne qui vous a remis la preuve.";
+  cardStatus.hidden = false;
+  return true;
+}
+async function readJson(file, maxBytes) {
+  if (!file || file.size > maxBytes) return undefined;
+  try { return JSON.parse(await file.text()); } catch { return undefined; }
+}
 async function handleFile(file) {
+  const data = await readJson(file, MAX_FILE_BYTES);
+  if (data && data.format === ChainDBoMV2b.KEYCARD_FORMAT) { // a key card dropped on the main area: keep the proof, if any
+    if (!(await applyKeyCard(data))) { show('error', cardStatus.textContent); return; }
+    if (currentV2b) { await runV2b(); return; }
+    show('success', "Fiche de clé chargée : l'empreinte est prête. Déposez maintenant le fichier de preuve.");
+    return;
+  }
   v2bReport.hidden = true; v2bPanel.hidden = true; currentV2b = null;
   if (!file || file.size > MAX_FILE_BYTES) { show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
-  let data;
-  try { data = JSON.parse(await file.text()); } catch { show('error', 'Impossible de lire ce fichier JSON.'); return; }
+  if (data === undefined) { show('error', 'Impossible de lire ce fichier JSON.'); return; }
   if (data && data.format === 'chaindbom-anchored-proof-v2b') {
     currentV2b = data;
     v2bPanel.hidden = false;
@@ -82,6 +118,13 @@ async function handleFile(file) {
 }
 input.addEventListener('change', () => { if (input.files.length) handleFile(input.files[0]); });
 rerun.addEventListener('click', runV2b);
+optCard.addEventListener('change', async () => {
+  if (!optCard.files.length) { clearCard(); return; }
+  const data = await readJson(optCard.files[0], MAX_CARD_BYTES);
+  if (data === undefined) { clearCard("Fiche de clé illisible ou trop volumineuse (maximum 64 Ko). L'empreinte n'a pas été remplie."); return; }
+  if (await applyKeyCard(data) && currentV2b) await runV2b();
+});
+optKey.addEventListener('input', () => { if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
 optRoot.addEventListener('input', () => { optFetch.disabled = optRoot.value.trim() !== ''; });
 ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('dragover'); }));

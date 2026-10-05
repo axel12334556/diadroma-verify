@@ -30,10 +30,12 @@ jobs:
           node tests/v2b.test.cjs
           node tests/v2b-text.test.cjs
           node tests/v2b-real.test.cjs
+          node tests/keycard.test.cjs
       - name: Vecteurs v2b identiques au vérificateur Python de référence
         run: |
           python -m pip install cryptography rfc8785
           python tests/tools/gen_v2b_vectors.py --verifier tests/tools/reference/verify_v2b_anchored_proof.py --check
+          python tests/tools/gen_keycard_vectors.py --check
           python tests/tools/verify_real_vectors.py
       - name: Tests Python sans réseau
         run: |

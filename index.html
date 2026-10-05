@@ -21,7 +21,10 @@
 <div id="result" role="status" aria-live="polite" hidden></div>
 <section id="v2bOptions" class="options" hidden>
 <h2>Contrôles complémentaires (facultatifs)</h2>
-<label for="optFingerprint">Empreinte de la clé du client, telle que publiée par lui (fiche de clé)</label>
+<label for="optKeyCard">Fiche de clé du client (fichier JSON qu'il publie lui-même) : remplit l'empreinte à votre place</label>
+<input id="optKeyCard" type="file" accept=".json,application/json">
+<p id="cardStatus" class="notice" hidden></p>
+<label for="optFingerprint">Ou empreinte de la clé du client, telle que publiée par lui</label>
 <input id="optFingerprint" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux, séparateurs acceptés">
 <label for="optBlockRoot">Racine de Merkle du bloc Bitcoin, lue sur votre explorateur ou votre nœud</label>
 <input id="optBlockRoot" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux">
