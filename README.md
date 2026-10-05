@@ -18,6 +18,12 @@ La preuve confirme le lien cryptographique d'un **hash fourni** avec un bloc sel
 
 `proof.json` contient `current_hash` (64 caractères hexadécimaux), `merkle_root` (même format), `merkle_proof` (liste d'objets `{"sibling": "...", "position": "left" ou "right"}`), `ots_proof_b64` (preuve OpenTimestamps détachée), `anchor_chain` (`bitcoin`) et, facultativement, `anchor_block_height` (contrôle de cohérence). L'exemple `tests/valid_single.json` est une preuve réelle **mono-feuille**, donc `merkle_proof` y est vide. Il ne valide pas à lui seul un lot industriel multi-feuilles. Ne jamais ajouter de données métier ou d'identifiants de connexion à ce dépôt public.
 
+## Preuves ChainDBoM v2b (moteur de vérification)
+
+`v2b.js` vérifie, dans le navigateur ou sous Node 20+, une preuve ancrée au format `chaindbom-anchored-proof-v2b` : signature Ed25519 du manifeste, lien, inclusion Merkle (style RFC 6962), `anchor_digest` du lot, engagement OpenTimestamps et attestation Bitcoin, et, si la racine du bloc est fournie ou lue, concordance avec le bloc. Chaque contrôle est rapporté séparément ; le niveau atteint va de `INVALIDE` à `BLOC_CONFIRME`. Le champ `status` du document n'est jamais cru. Une clé de signature n'est authentifiée que si une clé ou une empreinte de confiance, obtenue par une autre voie (fiche de clé du client), est fournie.
+
+C'est un portage indépendant du vérificateur Python de référence (`tests/tools/reference/`). Les deux sont comparés sur des vecteurs 100 % synthétiques et déterministes (`tests/vectors/v2b`, régénérés par `tests/tools/gen_v2b_vectors.py`) : `node tests/v2b.test.cjs`. Aucun réseau n'est utilisé par les tests. Limites : les entiers JSON au-delà de 2^53 sont refusés ; la signature Ed25519 repose sur WebCrypto (navigateurs récents) ; l'interface web pour ce format n'est pas encore branchée.
+
 ## Ligne de commande
 
 La variante pour utilisateurs techniques est décrite dans `cli/README.md`. Elle utilise Python et le paquet `opentimestamps`.

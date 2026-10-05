@@ -1,0 +1,57 @@
+{
+  "anchor": {
+    "anchor_block_height": 925847,
+    "anchor_chain": "bitcoin",
+    "anchor_digest": "5f3036bfdc783635e23603b169712c0dea49df187653113cf21821eaaea133ab",
+    "batch_number": 7,
+    "merkle_index": 3,
+    "merkle_proof": [
+      {
+        "position": "left",
+        "sibling": "c4733e8eca540cb1387313d6ab45ebcf3add914c2cd3554d9aaeaf6b05f66e57"
+      },
+      {
+        "position": "left",
+        "sibling": "a85c34bbe6b9d34a38284b7eabf043e932b00ecfe6886535840dbcc3e1d7a5b4"
+      },
+      {
+        "position": "right",
+        "sibling": "3c86bb6403074dc28c1d0e8090eb46c5f54d6602edbd255b808a99c82b093d8a"
+      }
+    ],
+    "merkle_root": "0E675B3A94E0A3F31220F3A1B6C9D003ABD5A0D448311753D98415F7ED054FCA",
+    "ots_proof_b64": "AE9wZW5UaW1lc3RhbXBzAABQcm9vZgC/ieLohOiSlAEIXzA2v9x4NjXiNgOxaXEsDepJ3xh2UxE88hgh6q6hM6vwD3N5bnRoZXRpYy1ub25jZQgABYiWDXPXGQEDl8E4",
+    "previous_anchor_digest": "abababababababababababababababababababababababababababababababab",
+    "record_count": 5,
+    "status": "anchored"
+  },
+  "format": "chaindbom-anchored-proof-v2b",
+  "format_version": 1,
+  "proof_only": {
+    "format": "chaindbom-proof-only-v2b-prototype",
+    "link": {
+      "client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+      "client_sequence": 4,
+      "link_hash": "ac217c4a00a45c31dd267511c39f931bb0c9625ab588292b32352313fad09011",
+      "previous_link_hash": "d71ca0c07077f35ebef396a2831eeff28b0d6d2d6a9ff0e780e3897c51333cf9",
+      "record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab",
+      "submission_id": "ec10619d-c8f7-4735-aa7a-222ce187934e"
+    },
+    "submission": {
+      "signature_hex": "6590ae449aff70b0fcac9896263358f15352d3cf584340edaebd7508058ad41f376b507e8686ed1de33485611f4ba6c753cf26e4278586e49a0ef9a43949e800",
+      "signed_manifest": {
+        "ciphertext_format": "age-encryption.org/v1",
+        "ciphertext_hash": "aaf620003edbcb337e18b495979863ec48106b614fef64b24517c83dc88b131a",
+        "client_id": "68bb2bda-a431-4a02-89cd-b066efe320c7",
+        "format_version": 2,
+        "inputs": [],
+        "recipient_key_id": "age-1",
+        "record_hash": "14f0363e399c6fb7ecbcbd7e989ee020c531aea2b42e1f15b6f27b94b6b834ab",
+        "signing_key_id": "sign-1",
+        "submission_id": "ec10619d-c8f7-4735-aa7a-222ce187934e"
+      },
+      "signing_public_key_hex": "faa238e82aa30b7b15f21479064ef6107a27ac25ec1d6d90d4421115b8973f2d"
+    },
+    "verification_state": "signature-and-single-link-only;not-anchored"
+  }
+}

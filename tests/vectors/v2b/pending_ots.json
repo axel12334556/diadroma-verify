@@ -1,0 +1,49 @@
+{
+  "anchor": {
+    "anchor_block_height": null,
+    "anchor_chain": "bitcoin",
+    "anchor_digest": "06937bb1a64df1982c736f4d9831ccbc4016a53ea684cee970b1032b0bd06ed2",
+    "batch_number": 1,
+    "merkle_index": 1,
+    "merkle_proof": [
+      {
+        "position": "left",
+        "sibling": "f22ffa834d7d53a59a69b23d2eba20a51e23bbf99e17569e9096d84189489300"
+      }
+    ],
+    "merkle_root": "21f42f60466f16d2aa9a1a66608ce784bf6209b84aa4391dcd0a0fc348202fd6",
+    "ots_proof_b64": "AE9wZW5UaW1lc3RhbXBzAABQcm9vZgC/ieLohOiSlAEIBpN7saZN8Zgsc29NmDHMvEAWpT6mhM7pcLEDKwvQbtIAg9/jDS75DI4jImh0dHBzOi8vY2FsZW5kYXIuc3ludGhldGljLmludmFsaWQ=",
+    "previous_anchor_digest": null,
+    "record_count": 2,
+    "status": "submitted"
+  },
+  "format": "chaindbom-anchored-proof-v2b",
+  "format_version": 1,
+  "proof_only": {
+    "format": "chaindbom-proof-only-v2b-prototype",
+    "link": {
+      "client_id": "1e9c9dcb-3455-44c4-a3a3-95d6bced904c",
+      "client_sequence": 2,
+      "link_hash": "63650fe7c6e6cd8bd651f62e00ac010ba22723c522edce9cab1e37c709190b5f",
+      "previous_link_hash": "d0c38f8e6ff5c29861d483e3f618cc58d74d834d6fe78098386e25b8150a4a3a",
+      "record_hash": "1aaca0fb7f8447fa7a185d98b10c97c527f0a17182cb945b98f50cae66a7afd9",
+      "submission_id": "c0f6619c-41b1-49df-9323-650491a4952c"
+    },
+    "submission": {
+      "signature_hex": "bee2be53fba1246fb5fade6c156c5db05b34a4ff85337d934fb12b59cf96474765e916d242bed87dd1a7a7d2b29fc2800a3bb9e844947e77515ce3a87eab960d",
+      "signed_manifest": {
+        "ciphertext_format": "age-encryption.org/v1",
+        "ciphertext_hash": "654e3b37286eecc66a1b2a6ceec8ba8c3f750e387c2edb6e7cb340e41ee38aa8",
+        "client_id": "1e9c9dcb-3455-44c4-a3a3-95d6bced904c",
+        "format_version": 2,
+        "inputs": [],
+        "recipient_key_id": "age-1",
+        "record_hash": "1aaca0fb7f8447fa7a185d98b10c97c527f0a17182cb945b98f50cae66a7afd9",
+        "signing_key_id": "sign-1",
+        "submission_id": "c0f6619c-41b1-49df-9323-650491a4952c"
+      },
+      "signing_public_key_hex": "9935c9bf93d97f42e8ccc68734325a2eaf5aee30bb7c05da273fc83ae154d35a"
+    },
+    "verification_state": "signature-and-single-link-only;not-anchored"
+  }
+}

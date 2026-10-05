@@ -1,0 +1,44 @@
+{
+  "anchor": {
+    "anchor_block_height": 925847,
+    "anchor_chain": "bitcoin",
+    "anchor_digest": "398774efbd4940e849e61786396c8b4b9a6a14261ba5dae2941ef4ad20b5fc40",
+    "batch_number": 1,
+    "merkle_index": 0,
+    "merkle_proof": [],
+    "merkle_root": "a405de8fb6a7cd09853f71a1b912eceb3a8080227fcdd526db6e526f75cd18b3",
+    "ots_proof_b64": "AE9wZW5UaW1lc3RhbXBzAABQcm9vZgC/ieLohOiSlAEIOYd0771JQOhJ5heGOWyLS5pqFCYbpdrilB70rSC1/EDwD3N5bnRoZXRpYy1ub25jZQgABYiWDXPXGQEDl8E4",
+    "previous_anchor_digest": null,
+    "record_count": 1,
+    "status": "anchored"
+  },
+  "format": "chaindbom-anchored-proof-v2b",
+  "format_version": 1,
+  "proof_only": {
+    "format": "chaindbom-proof-only-v2b-prototype",
+    "link": {
+      "client_id": "d9b8458b-6298-442d-a520-8520b95b07f6",
+      "client_sequence": 1,
+      "link_hash": "b0638f7ac0c89cd186fe8e2e559fdaeee272f240512477d625875d8aa60dcc47",
+      "previous_link_hash": null,
+      "record_hash": "7fcfaa599b46150b077d86512d908adb007a50947e99def1b45c53b6088f1341",
+      "submission_id": "626d38b2-f76f-4c2c-9d0c-d43c4599fffb"
+    },
+    "submission": {
+      "signature_hex": "a4a9124bb21d3d430430cd9c9d447bd1c9b33c35993feffd07e97bc406fc071f1a30584334530bb1646d491b038f72fa02407b11b729dd600558effefbad950b",
+      "signed_manifest": {
+        "ciphertext_format": "age-encryption.org/v1",
+        "ciphertext_hash": "78398f904aa39c3b014127c6b7d2522fe37e09d6c1f3c47c09fa37f0942a9c9f",
+        "client_id": "d9b8458b-6298-442d-a520-8520b95b07f6",
+        "format_version": 2,
+        "inputs": [],
+        "recipient_key_id": "age-1",
+        "record_hash": "7fcfaa599b46150b077d86512d908adb007a50947e99def1b45c53b6088f1341",
+        "signing_key_id": "sign-1",
+        "submission_id": "626d38b2-f76f-4c2c-9d0c-d43c4599fffb"
+      },
+      "signing_public_key_hex": "4251f9a11db82257f73309221bb7a750ac823e7da7e15649838ad347861c1490"
+    },
+    "verification_state": "signature-and-single-link-only;not-anchored"
+  }
+}
