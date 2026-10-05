@@ -31,6 +31,7 @@ jobs:
           node tests/verify.test.cjs
           node tests/v2b.test.cjs
           node tests/v2b-text.test.cjs
+          node tests/v2b-real.test.cjs
           python -m py_compile cli/verify_anchor.py
           python -m unittest discover -s tests -p 'test_cli_height.py' -v
       - name: Assembler uniquement les fichiers autorisés
