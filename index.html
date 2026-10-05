@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="style/style.css">
 <script src="ots.js" defer></script>
 <script src="verify.js" defer></script>
+<script src="v2b.js" defer></script>
+<script src="v2b-text.js" defer></script>
 <script src="ui.js" defer></script>
 </head>
 <body>
@@ -17,6 +19,18 @@
 <label class="dropzone" id="dropzone" for="fileInput">Glissez votre fichier de preuve ici, ou cliquez pour le sélectionner. <span>Fichier JSON · 1 Mo maximum</span></label>
 <input id="fileInput" type="file" accept=".json,application/json" class="visually-hidden">
 <div id="result" role="status" aria-live="polite" hidden></div>
+<section id="v2bOptions" class="options" hidden>
+<h2>Contrôles complémentaires (facultatifs)</h2>
+<label for="optFingerprint">Empreinte de la clé du client, telle que publiée par lui (fiche de clé)</label>
+<input id="optFingerprint" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux, séparateurs acceptés">
+<label for="optBlockRoot">Racine de Merkle du bloc Bitcoin, lue sur votre explorateur ou votre nœud</label>
+<input id="optBlockRoot" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux">
+<label class="check-option"><input id="optFetchBlock" type="checkbox"> Ou lire le bloc auprès de Blockstream (blockstream.info). Cette requête révèle à Blockstream la hauteur du bloc, jamais le contenu de la preuve. Sans cette case, aucune requête n'est envoyée.</label>
+<label for="optDbom">DBoM en clair, fourni par le client (JSON) : pour vérifier qu'il correspond à la preuve</label>
+<input id="optDbom" type="file" accept=".json,application/json">
+<button id="rerun" type="button">Relancer la vérification</button>
+</section>
+<div id="v2bReport" hidden></div>
 <p><a href="how-it-works.html">Comment ça marche ?</a></p>
 </main>
 </body>
