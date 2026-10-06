@@ -50,7 +50,9 @@ async function verifyProof(proof, fetchImpl) {
   if (proof.anchor_chain !== undefined && proof.anchor_chain !== 'bitcoin') {
     return { status: 'error', msg: 'Preuve non confirmée : blockchain non prise en charge.' };
   }
-  fetchImpl = fetchImpl || (typeof fetch === 'function' ? fetch.bind(globalThis) : null);
+  // undefined: the page's own fetch (callers that already asked the user); null: the user did not allow any network request.
+  const networkAllowed = fetchImpl !== null;
+  if (fetchImpl === undefined) fetchImpl = typeof fetch === 'function' ? fetch.bind(globalThis) : null;
   const expectedRoot = proof.merkle_root.toLowerCase();
   try {
     const root = await recomputeMerkleRoot(proof.current_hash, proof.merkle_proof);
@@ -66,6 +68,7 @@ async function verifyProof(proof, fetchImpl) {
     candidates = candidates.filter(a => a.height === proof.anchor_block_height);
     if (!candidates.length) return { status: 'error', msg: 'Preuve non confirmée : le bloc annoncé ne correspond pas à la preuve.' };
   }
+  if (!networkAllowed) return { status: 'unsupported', msg: "Ancien format, sans signature. Le bloc Bitcoin n'a pas été consulté : cochez « lire le bloc auprès de Blockstream » puis relancez la vérification pour comparer l'horodatage au bloc." };
   if (!fetchImpl) return { status: 'unsupported', msg: 'Vérification indisponible : accès réseau impossible.' };
   let networkFailure = false;
   const seen = new Set();
@@ -77,7 +80,7 @@ async function verifyProof(proof, fetchImpl) {
       const block = await fetchBlock(fetchImpl, attestation.height);
       if (reverseHex(attestation.digest) === block.merkle_root) {
         const date = new Date(block.timestamp * 1000).toLocaleString('fr-FR', { timeZone: 'UTC' });
-        return { status: 'success', msg: `Preuve confirmée : ce hash est relié à un lot inscrit dans le bloc Bitcoin n° ${attestation.height}, daté du ${date} UTC.` };
+        return { status: 'unsigned', msg: `Horodatage seul, sans signature : ce hash est relié à un lot inscrit dans le bloc Bitcoin n° ${attestation.height}, daté du ${date} UTC. Ce fichier de l'ancien format ne contient aucune signature : rien ne le rattache à un client ni à Diadroma, et n'importe qui peut horodater n'importe quel hash.` };
       }
     } catch { networkFailure = true; }
   }

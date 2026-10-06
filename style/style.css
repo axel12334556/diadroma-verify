@@ -44,7 +44,7 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 #result:not([hidden])::before, .banner::before { content: ""; position: absolute; left: 1.25rem; top: 1.35rem; width: 16px; height: 16px; border-radius: 50%; background: var(--fond); border: 3px solid var(--texte-doux); }
 #result.success::before, .banner.success::before { background: var(--menthe); border-color: var(--menthe); }
 #result.error::before, .banner.error::before { background: var(--erreur); border-color: var(--erreur); }
-#result.pending::before, .banner.pending::before, #result.unsupported::before, .banner.unsupported::before { background: var(--fond); border-color: var(--ambre); }
+#result.pending::before, .banner.pending::before, #result.unsupported::before, .banner.unsupported::before, #result.unsigned::before { background: var(--fond); border-color: var(--ambre); }
 .banner strong { font-family: var(--police-titre); font-size: 1.1rem; letter-spacing: -.015em; }
 .banner p { margin: .35rem 0 0; color: var(--texte-doux); }
 

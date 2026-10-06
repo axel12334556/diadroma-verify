@@ -22,6 +22,9 @@ const memoryBox = document.getElementById('memoryBox');
 const memoryText = document.getElementById('memoryText');
 const memoryBtn = document.getElementById('memoryBtn');
 const trustStore = ChainDBoMTrustStore.createTrustStore((() => { try { return window.localStorage; } catch { return { getItem() { throw new Error('indisponible'); }, setItem() { throw new Error('indisponible'); } }; } })());
+let dropSeq = 0; // numbers the dropped files: a file read that finishes after a newer drop is abandoned
+let generation = 0; // incremented by every drop or verification: a result is shown only if no newer one was started (V2)
+let currentLegacy = null; // old-format proof (timestamp only, no signature) dropped by the user
 let currentV2b = null;
 let currentProofSha256 = null; // SHA-256 of the exact bytes of the dropped proof file (null if it could not be computed)
 let currentReport = null; // the exportable verification report for the last v2b run
@@ -110,11 +113,13 @@ async function runDisclosure() {
   disclosureReport.replaceChildren(); disclosureReport.hidden = true;
   if (!currentDisclosure) return;
   const proof = proofFacts();
+  const gen = generation;
   let result;
   try {
     result = await ChainDBoMV2b.checkDisclosure(currentDisclosure, { keyCard: cardData || undefined, trustedFingerprint: optKey.value.trim() || undefined,
       proofRecordHash: proof ? proof.recordHash : undefined, proofClientId: proof ? proof.clientId : undefined });
   } catch { result = { ok: false, checks: [{ id: 'structure', status: 'fail', detail: 'La vérification a échoué de façon inattendue.' }], facts: null }; }
+  if (gen !== generation) return; // a newer file or run replaced this one while it was being checked
   disclosureReport.append(el('h2', '', "Autorisation de divulgation"));
   const banner = el('div', 'banner ' + (result.ok ? 'success' : 'error'));
   banner.append(el('strong', '', result.ok ? "Autorisation du fournisseur vérifiée" : "Autorisation non vérifiée"),
@@ -144,11 +149,11 @@ async function runDisclosure() {
 }
 function clearReport() { currentReport = null; reportMeta.replaceChildren(); reportActions.hidden = true; }
 // Builds the exportable report. It never receives the DBoM bytes: only whether one was provided.
-function refreshReport(result, options) {
+function refreshReport(result, options, doc, proofSha256) {
   clearReport();
-  if (!currentProofSha256) return;
+  if (!proofSha256) return;
   try {
-    currentReport = ChainDBoMReport.buildReport({ result, proofDoc: currentV2b, proofSha256: currentProofSha256, generatedAt: new Date(),
+    currentReport = ChainDBoMReport.buildReport({ result, proofDoc: doc, proofSha256, generatedAt: new Date(),
       inputs: { trustedFingerprintProvided: !!optKey.value.trim(), keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(),
         blockReadFromBlockstream: !!options.fetchBlock, dbomProvided: !!options.dbomBytes } });
   } catch { return; }
@@ -167,6 +172,7 @@ function refreshReport(result, options) {
 }
 async function runV2b() {
   if (!currentV2b) return;
+  const gen = ++generation, doc = currentV2b, proofSha256 = currentProofSha256; // frozen for this run
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
     blockMerkleRoot: optRoot.value.trim() || undefined,
     fetchBlock: optFetch.checked && !optRoot.value.trim() };
@@ -174,17 +180,19 @@ async function runV2b() {
     const file = optDbom.files[0];
     if (file.size > MAX_FILE_BYTES) { show('error', 'DBoM trop volumineux (maximum 1 Mo).'); return; }
     options.dbomBytes = new Uint8Array(await file.arrayBuffer());
+    if (gen !== generation) return;
   }
   show('pending', 'Vérification en cours…');
   try {
-    const result = await ChainDBoMV2b.verify(currentV2b, options);
+    const result = await ChainDBoMV2b.verify(doc, options);
+    if (gen !== generation) return; // another file or run started meanwhile: this result is not shown
     output.hidden = true;
     renderV2b(result);
-    refreshReport(result, options);
+    refreshReport(result, options, doc, proofSha256);
     refreshMemory(result);
     renderDbom(result, options.dbomBytes);
     await runDisclosure();
-  } catch { show('error', 'La vérification a échoué de façon inattendue.'); }
+  } catch { if (gen === generation) show('error', 'La vérification a échoué de façon inattendue.'); }
 }
 function proofClientId(doc) {
   const m = doc && doc.proof_only && doc.proof_only.submission && doc.proof_only.submission.signed_manifest;
@@ -241,7 +249,9 @@ async function readJson(file, maxBytes) {
   try { return JSON.parse(await file.text()); } catch { return undefined; }
 }
 async function handleFile(file) {
+  const drop = ++dropSeq;
   const data = await readJson(file, MAX_FILE_BYTES);
+  if (drop !== dropSeq) return;
   if (data && data.format === ChainDBoMV2b.KEYCARD_FORMAT) { // a key card dropped on the main area: keep the proof, if any
     if (!(await applyKeyCard(data))) { show('error', cardStatus.textContent); return; }
     if (currentV2b) { await runV2b(); return; }
@@ -256,13 +266,15 @@ async function handleFile(file) {
     await runDisclosure();
     return;
   }
-  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentProofSha256 = null; clearReport();
+  generation++; // a verification still running belongs to the file being replaced: its result must not be shown
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentLegacy = null; currentProofSha256 = null; clearReport();
   if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }
   if (data && data.format === 'chaindbom-anchored-proof-v2b') {
     currentV2b = data;
     try { currentProofSha256 = await ChainDBoMReport.sha256Hex(new Uint8Array(await file.arrayBuffer())); } catch { currentProofSha256 = null; }
+    if (drop !== dropSeq) return;
     v2bPanel.hidden = false;
     memorizedFor = null;
     const clientId = proofClientId(data), saved = clientId && trustStore.get(clientId);
@@ -274,13 +286,22 @@ async function handleFile(file) {
     return;
   }
   currentDisclosure = null; disclosureReport.hidden = true;
+  currentLegacy = { doc: data }; // wrapped: the document may be null or a scalar, which verifyProof reports as invalid
+  await runLegacy();
+}
+// Old format (timestamp only, no signature): the block is read from Blockstream only if the user ticked the box (V1).
+async function runLegacy() {
+  if (!currentLegacy) return;
+  const gen = ++generation, doc = currentLegacy.doc;
+  v2bPanel.hidden = false;
   try {
-    const result = await verifyProof(data);
+    const result = await verifyProof(doc, optFetch.checked ? undefined : null);
+    if (gen !== generation) return;
     show(result.status, result.msg);
-  } catch { show('error', 'Impossible de vérifier ce fichier.'); }
+  } catch { if (gen === generation) show('error', 'Impossible de vérifier ce fichier.'); }
 }
 input.addEventListener('change', () => { if (input.files.length) handleFile(input.files[0]); });
-rerun.addEventListener('click', async () => { if (currentV2b) await runV2b(); else await runDisclosure(); });
+rerun.addEventListener('click', async () => { if (currentV2b) await runV2b(); else if (currentLegacy) await runLegacy(); else await runDisclosure(); });
 optCard.addEventListener('change', async () => {
   if (!optCard.files.length) { clearCard(); return; }
   const data = await readJson(optCard.files[0], MAX_CARD_BYTES);
