@@ -96,6 +96,7 @@ Garanties, contrôlées par `tests/keys-app.test.cjs` (Chromium réel, page ouve
 
 **Pas encore fait** : revue de sécurité indépendante et essai avec un volontaire non technique (lot 4) ; version anglaise des textes ; publication du
 fichier avec son empreinte (non publié sur GitHub Pages ; hébergement d'une page de démonstration : décision « non pour l'instant »).
+La façon de le publier (fichier à télécharger, empreinte sur deux canaux, conditions préalables) est décrite dans `PUBLICATION.md` ; le mode d'emploi destiné au client est `LISEZMOI-CLIENT.md`.
 
 **Vérifier un fichier reçu** : `shasum -a 256 diadroma-cles.html` doit afficher l'empreinte publiée.
 
