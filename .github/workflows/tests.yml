@@ -50,3 +50,18 @@ jobs:
         run: |
           python -m py_compile cli/verify_anchor.py
           python -m unittest discover -s tests -p 'test_cli_height.py' -v
+  age-bundle:
+    # Reconstruit la bibliothèque age vendorée depuis le verrou npm et exige un résultat identique au fichier commité
+    # (réseau : registre npm). Inactif tant que le verrou n'a pas été commité.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Reconstruire et comparer
+        if: ${{ hashFiles('keys/vendor/build/package-lock.json') != '' }}
+        run: keys/vendor/build.sh --check

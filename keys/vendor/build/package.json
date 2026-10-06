@@ -1,0 +1,12 @@
+{
+  "name": "diadroma-age-vendor-build",
+  "private": true,
+  "description": "Construit une copie unique et figée de la bibliothèque age-encryption pour l'outil de clés hors ligne. Voir ../README.md.",
+  "type": "module",
+  "dependencies": {
+    "age-encryption": "0.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.27.2"
+  }
+}
