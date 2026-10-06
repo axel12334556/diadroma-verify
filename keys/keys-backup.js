@@ -21,7 +21,12 @@
   const MAX_MEMBER_BYTES = 32 * 1024;
   const MAX_BACKUP_BYTES = 256 * 1024;
   const AGE_HEADER = enc.encode('age-encryption.org/v1\n-> scrypt ');
-  const MIN_PASSPHRASE_CHARS = 12;
+  // K1: the strength of the backup is exactly that of its passphrase (scrypt 2^18 costs an attacker about 2.5 s per guess
+  // on one core). A chosen phrase must therefore be long and made of several words; its strength stays "not estimated".
+  const MIN_PASSPHRASE_CHARS = 20, MIN_PASSPHRASE_WORDS = 4, MIN_DISTINCT_CHARS = 8;
+  // K3: the only scrypt cost accepted when a backup is opened (age's default, and what this tool writes). A lower one
+  // means the file was weakened; a higher one can lock a modest computer.
+  const SCRYPT_LOG_N = 18;
   const DEFAULT_WORDS = 7;
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
   const PKCS8_ED25519_PREFIX = Uint8Array.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20]);
@@ -189,13 +194,32 @@
       backup_created_at: String(manifest.created_at), key_card_matched: card !== undefined && card !== null };
   }
 
+  // K2: the same phrase can be typed with a composed accent (é) or a decomposed one (e + ́) depending on the keyboard and the
+  // system. It is always normalised to NFC before use; a backup made by an older version of the tool is still tried as typed.
+  const nfc = text => text.normalize('NFC');
   function checkPassphrase(passphrase) {
-    if (typeof passphrase !== 'string' || Array.from(passphrase).length < MIN_PASSPHRASE_CHARS) {
+    if (typeof passphrase !== 'string') throw new BackupError('phrase secrète absente');
+    const phrase = nfc(passphrase);
+    if (Array.from(phrase).length < MIN_PASSPHRASE_CHARS) {
       throw new BackupError(`la phrase secrète doit faire au moins ${MIN_PASSPHRASE_CHARS} caractères`);
     }
-    if (/[\u0000-\u001f\u007f]/.test(passphrase) || passphrase !== passphrase.trim()) {
+    if (/[\u0000-\u001f\u007f]/.test(phrase) || phrase !== phrase.trim()) {
       throw new BackupError('la phrase secrète ne doit contenir ni saut de ligne, ni caractère de contrôle, ni espace au début ou à la fin');
     }
+    if (phrase.split(/[\s-]+/).filter(Boolean).length < MIN_PASSPHRASE_WORDS) {
+      throw new BackupError(`la phrase secrète doit compter au moins ${MIN_PASSPHRASE_WORDS} mots (séparés par des espaces ou des tirets)`);
+    }
+    if (new Set(Array.from(phrase.toLowerCase())).size < MIN_DISTINCT_CHARS) {
+      throw new BackupError('la phrase secrète est trop répétitive : utilisez des mots différents');
+    }
+    return phrase;
+  }
+  // The scrypt stanza of an age file: "age-encryption.org/v1\n-> scrypt <salt> <log2 N>\n".
+  function scryptLogN(bytes) {
+    const line = new TextDecoder('latin1').decode(bytes.subarray(0, 200)).split('\n')[1] || '';
+    const match = /^-> scrypt [A-Za-z0-9+/]+ (\d{1,2})$/.exec(line);
+    if (!match) throw new BackupError('not a passphrase-protected age file');
+    return Number(match[1]);
   }
 
   async function openBackup(bytes, passphrase) {
@@ -203,9 +227,12 @@
       throw new BackupError('not a passphrase-protected age file');
     }
     if (typeof passphrase !== 'string' || passphrase === '') throw new BackupError('phrase secrète absente');
+    if (scryptLogN(bytes) !== SCRYPT_LOG_N) throw new BackupError(`unsupported scrypt cost: only 2^${SCRYPT_LOG_N} is accepted (coût scrypt non pris en charge)`);
     let plain;
-    try { const d = new (age().Decrypter)(); d.addPassphrase(passphrase); plain = await d.decrypt(bytes); }
-    catch { throw new BackupError('cannot open the backup: wrong passphrase, or the file is damaged (phrase secrète incorrecte, ou fichier abîmé)'); }
+    for (const attempt of new Set([nfc(passphrase), passphrase])) { // normalised first, then as typed (backups of earlier versions)
+      try { const d = new (age().Decrypter)(); d.addPassphrase(attempt); plain = await d.decrypt(bytes); break; } catch { /* next */ }
+    }
+    if (!plain) throw new BackupError('cannot open the backup: wrong passphrase, or the file is damaged (phrase secrète incorrecte, ou fichier abîmé)');
     const { manifest, members } = parseArchive(plain);
     await checkManifestHashes(manifest, members);
     const files = {};
@@ -218,7 +245,7 @@
    * Retourne { bytes, facts } ; bytes n'est rendu que si la réouverture a réussi. */
   async function backup(files, passphrase, options) {
     const o = options || {};
-    checkPassphrase(passphrase);
+    passphrase = checkPassphrase(passphrase); // normalised to NFC
     for (const name of KEY_FILES) {
       if (typeof files[name] !== 'string' || enc.encode(files[name]).length > MAX_MEMBER_BYTES) throw new BackupError('unexpectedly large or missing key file');
     }
@@ -279,6 +306,6 @@
     return { passphrase: picked.join('-'), entropyBits: Math.floor(count * Math.log2(list.length)) };
   }
 
-  root.ChainDBoMKeysBackup = { backup, restoreTest, restore, checkKeys, generatePassphrase, BackupError, BACKUP_FORMAT, MIN_PASSPHRASE_CHARS,
-    _internals: { tarEncode, tarDecode, parseArchive, pythonJson } };
+  root.ChainDBoMKeysBackup = { backup, restoreTest, restore, checkKeys, generatePassphrase, BackupError, BACKUP_FORMAT, MIN_PASSPHRASE_CHARS, MIN_PASSPHRASE_WORDS,
+    _internals: { tarEncode, tarDecode, parseArchive, pythonJson, checkPassphrase, scryptLogN } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

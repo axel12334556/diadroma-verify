@@ -11,7 +11,7 @@
     footer: 'Cet outil fonctionne dans votre navigateur, sans connexion : vos clés et votre phrase secrète ne quittent jamais cette page. ChainDBoM n’en garde aucune copie.',
 
     unsupported: 'Ce navigateur ne sait pas créer les clés nécessaires (Ed25519 et X25519). Utilisez une version récente de Chrome, Edge, Firefox ou Safari. Rien n’a été créé.',
-    hostedWarning: 'Cette page est affichée depuis un site web, pas depuis un fichier de votre ordinateur. Pour la sécurité maximale, utilisez la copie du fichier dont l’empreinte a été publiée, ouverte depuis votre disque.',
+    hostedBlocked: 'Cette page est affichée depuis un site web, pas depuis un fichier de votre ordinateur. Par sécurité, l’outil ne crée, ne sauvegarde ni ne contrôle aucune clé dans ce cas, et rien n’a été fait. Téléchargez le fichier dont l’empreinte a été publiée et ouvrez-le depuis votre disque.',
     privateTip: 'Conseil : travaillez dans une fenêtre de navigation privée, sans extensions, et fermez cette page quand vous avez fini.',
 
     home: {
@@ -49,8 +49,8 @@
       another: 'Tirer une autre phrase',
       own: 'Choisir ma propre phrase (utilisateurs avancés)',
       generated: 'Revenir à une phrase tirée au hasard',
-      ownLabel: 'Ma phrase secrète (12 caractères au minimum)',
-      ownHelp: 'Une longue phrase que vous seul connaissez. Elle doit être retapée à l’identique (accents et majuscules compris).',
+      ownLabel: 'Ma phrase secrète (20 caractères et 4 mots au minimum)',
+      ownHelp: 'Une longue phrase de plusieurs mots que vous seul connaissez. Elle doit être retapée à l’identique (majuscules comprises). Force non estimée : la sécurité de la sauvegarde est exactement celle de cette phrase, et quiconque obtient le fichier peut en tester autant qu’il veut sur son ordinateur. Une phrase tirée au hasard est plus sûre.',
       strength: n => 'Force estimée : environ ' + n + ' bits.',
       written: 'J’ai noté ma phrase secrète sur papier.',
       confirmLabel: 'Retapez la phrase pour confirmer',
@@ -136,6 +136,7 @@
       wrongPhrase: 'Impossible d’ouvrir la sauvegarde : phrase secrète incorrecte, ou fichier abîmé.',
       cardMismatch: 'Les clés de la sauvegarde ne correspondent pas à la fiche de clé fournie.',
       cardInvalid: 'La fiche de clé fournie n’est pas valide.',
+      wrongCost: 'Ce fichier est protégé avec un coût de calcul inhabituel : il a été modifié ou créé par un autre outil. Il est refusé par prudence ; refaites une sauvegarde avec cet outil.',
       keysBroken: 'Les clés contenues dans la sauvegarde ne fonctionnent pas : la sauvegarde est refusée.',
     },
   });

@@ -13,11 +13,11 @@ Si l'empreinte est différente, **n'ouvrez pas le fichier** et prévenez Diadrom
 
 ## 2. L'ouvrir depuis votre disque
 
-Enregistrez le fichier sur votre ordinateur, puis ouvrez-le par un double-clic (l'adresse commence par `file://`). Ne l'utilisez pas depuis un lien web ni depuis un fichier reçu par une autre voie. Vous pouvez couper la connexion Internet pendant l'opération.
+Enregistrez le fichier sur votre ordinateur, puis ouvrez-le par un double-clic (l'adresse commence par `file://`). Ne l'utilisez pas depuis un lien web (l'outil refuse alors de fonctionner) ni depuis un fichier reçu par une autre voie. Vous pouvez couper la connexion Internet pendant l'opération.
 
 ## 3. Suivre les écrans
 
-Créer, noter les 7 mots sur papier, télécharger la sauvegarde, puis **prouver que vous savez la rouvrir** (en retapant les mots depuis votre papier). Vos clés ne vous sont remises qu'après cette preuve.
+Créer, noter les 7 mots sur papier (gardez la phrase tirée au hasard : une phrase de votre choix, qui doit compter 20 caractères et 4 mots au moins, protège moins bien votre sauvegarde), télécharger la sauvegarde, puis **prouver que vous savez la rouvrir** (en retapant les mots depuis votre papier). Vos clés ne vous sont remises qu'après cette preuve.
 
 ## 4. Après
 

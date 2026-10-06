@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-oaYR+/ABG4UlpdZOecWt5kUPCInmUZWmL4DzfFptPLw=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-1UqFTTJckzmq3T7+ZAVwdFRNJ7N56XKroxgvReHq600=' 'sha256-ysVvhmptOzFnwmVDTJ2RnzZnFj5vx28/hiw77tAbbh4=' 'sha256-JcShOSMIrK1dZZkJyOwAnOQj7GVwgdbXE8Na2ubGsPA='; style-src 'sha256-E3E2MzA89vgXdZnUKyUKzxK7dH/BNj62MiHWRSYxrRg='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-oaYR+/ABG4UlpdZOecWt5kUPCInmUZWmL4DzfFptPLw=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-vUD6lUJEpPp8E4cD+asBBAxn3Hdo8tVPOeSysCm+iKc=' 'sha256-Efxb/XO2MX7zhoowrooOwXeN/WYEt4qEIakLcf4lixE=' 'sha256-akjO/AaMp8rwPFZa1hGI+EdZ45s2o9Kfad+IOGHXND8='; style-src 'sha256-E3E2MzA89vgXdZnUKyUKzxK7dH/BNj62MiHWRSYxrRg='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Diadroma — Mes clés</title>
 <style>
@@ -17810,7 +17810,12 @@ var AgeEncryption = (() => {
   const MAX_MEMBER_BYTES = 32 * 1024;
   const MAX_BACKUP_BYTES = 256 * 1024;
   const AGE_HEADER = enc.encode('age-encryption.org/v1\n-> scrypt ');
-  const MIN_PASSPHRASE_CHARS = 12;
+  // K1: the strength of the backup is exactly that of its passphrase (scrypt 2^18 costs an attacker about 2.5 s per guess
+  // on one core). A chosen phrase must therefore be long and made of several words; its strength stays "not estimated".
+  const MIN_PASSPHRASE_CHARS = 20, MIN_PASSPHRASE_WORDS = 4, MIN_DISTINCT_CHARS = 8;
+  // K3: the only scrypt cost accepted when a backup is opened (age's default, and what this tool writes). A lower one
+  // means the file was weakened; a higher one can lock a modest computer.
+  const SCRYPT_LOG_N = 18;
   const DEFAULT_WORDS = 7;
   const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
   const PKCS8_ED25519_PREFIX = Uint8Array.from([0x30, 0x2e, 0x02, 0x01, 0x00, 0x30, 0x05, 0x06, 0x03, 0x2b, 0x65, 0x70, 0x04, 0x22, 0x04, 0x20]);
@@ -17978,13 +17983,32 @@ var AgeEncryption = (() => {
       backup_created_at: String(manifest.created_at), key_card_matched: card !== undefined && card !== null };
   }
 
+  // K2: the same phrase can be typed with a composed accent (é) or a decomposed one (e + ́) depending on the keyboard and the
+  // system. It is always normalised to NFC before use; a backup made by an older version of the tool is still tried as typed.
+  const nfc = text => text.normalize('NFC');
   function checkPassphrase(passphrase) {
-    if (typeof passphrase !== 'string' || Array.from(passphrase).length < MIN_PASSPHRASE_CHARS) {
+    if (typeof passphrase !== 'string') throw new BackupError('phrase secrète absente');
+    const phrase = nfc(passphrase);
+    if (Array.from(phrase).length < MIN_PASSPHRASE_CHARS) {
       throw new BackupError(`la phrase secrète doit faire au moins ${MIN_PASSPHRASE_CHARS} caractères`);
     }
-    if (/[\u0000-\u001f\u007f]/.test(passphrase) || passphrase !== passphrase.trim()) {
+    if (/[\u0000-\u001f\u007f]/.test(phrase) || phrase !== phrase.trim()) {
       throw new BackupError('la phrase secrète ne doit contenir ni saut de ligne, ni caractère de contrôle, ni espace au début ou à la fin');
     }
+    if (phrase.split(/[\s-]+/).filter(Boolean).length < MIN_PASSPHRASE_WORDS) {
+      throw new BackupError(`la phrase secrète doit compter au moins ${MIN_PASSPHRASE_WORDS} mots (séparés par des espaces ou des tirets)`);
+    }
+    if (new Set(Array.from(phrase.toLowerCase())).size < MIN_DISTINCT_CHARS) {
+      throw new BackupError('la phrase secrète est trop répétitive : utilisez des mots différents');
+    }
+    return phrase;
+  }
+  // The scrypt stanza of an age file: "age-encryption.org/v1\n-> scrypt <salt> <log2 N>\n".
+  function scryptLogN(bytes) {
+    const line = new TextDecoder('latin1').decode(bytes.subarray(0, 200)).split('\n')[1] || '';
+    const match = /^-> scrypt [A-Za-z0-9+/]+ (\d{1,2})$/.exec(line);
+    if (!match) throw new BackupError('not a passphrase-protected age file');
+    return Number(match[1]);
   }
 
   async function openBackup(bytes, passphrase) {
@@ -17992,9 +18016,12 @@ var AgeEncryption = (() => {
       throw new BackupError('not a passphrase-protected age file');
     }
     if (typeof passphrase !== 'string' || passphrase === '') throw new BackupError('phrase secrète absente');
+    if (scryptLogN(bytes) !== SCRYPT_LOG_N) throw new BackupError(`unsupported scrypt cost: only 2^${SCRYPT_LOG_N} is accepted (coût scrypt non pris en charge)`);
     let plain;
-    try { const d = new (age().Decrypter)(); d.addPassphrase(passphrase); plain = await d.decrypt(bytes); }
-    catch { throw new BackupError('cannot open the backup: wrong passphrase, or the file is damaged (phrase secrète incorrecte, ou fichier abîmé)'); }
+    for (const attempt of new Set([nfc(passphrase), passphrase])) { // normalised first, then as typed (backups of earlier versions)
+      try { const d = new (age().Decrypter)(); d.addPassphrase(attempt); plain = await d.decrypt(bytes); break; } catch { /* next */ }
+    }
+    if (!plain) throw new BackupError('cannot open the backup: wrong passphrase, or the file is damaged (phrase secrète incorrecte, ou fichier abîmé)');
     const { manifest, members } = parseArchive(plain);
     await checkManifestHashes(manifest, members);
     const files = {};
@@ -18007,7 +18034,7 @@ var AgeEncryption = (() => {
    * Retourne { bytes, facts } ; bytes n'est rendu que si la réouverture a réussi. */
   async function backup(files, passphrase, options) {
     const o = options || {};
-    checkPassphrase(passphrase);
+    passphrase = checkPassphrase(passphrase); // normalised to NFC
     for (const name of KEY_FILES) {
       if (typeof files[name] !== 'string' || enc.encode(files[name]).length > MAX_MEMBER_BYTES) throw new BackupError('unexpectedly large or missing key file');
     }
@@ -18068,8 +18095,8 @@ var AgeEncryption = (() => {
     return { passphrase: picked.join('-'), entropyBits: Math.floor(count * Math.log2(list.length)) };
   }
 
-  root.ChainDBoMKeysBackup = { backup, restoreTest, restore, checkKeys, generatePassphrase, BackupError, BACKUP_FORMAT, MIN_PASSPHRASE_CHARS,
-    _internals: { tarEncode, tarDecode, parseArchive, pythonJson } };
+  root.ChainDBoMKeysBackup = { backup, restoreTest, restore, checkKeys, generatePassphrase, BackupError, BACKUP_FORMAT, MIN_PASSPHRASE_CHARS, MIN_PASSPHRASE_WORDS,
+    _internals: { tarEncode, tarDecode, parseArchive, pythonJson, checkPassphrase, scryptLogN } };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
 
 </script>
@@ -18087,7 +18114,7 @@ var AgeEncryption = (() => {
     footer: 'Cet outil fonctionne dans votre navigateur, sans connexion : vos clés et votre phrase secrète ne quittent jamais cette page. ChainDBoM n’en garde aucune copie.',
 
     unsupported: 'Ce navigateur ne sait pas créer les clés nécessaires (Ed25519 et X25519). Utilisez une version récente de Chrome, Edge, Firefox ou Safari. Rien n’a été créé.',
-    hostedWarning: 'Cette page est affichée depuis un site web, pas depuis un fichier de votre ordinateur. Pour la sécurité maximale, utilisez la copie du fichier dont l’empreinte a été publiée, ouverte depuis votre disque.',
+    hostedBlocked: 'Cette page est affichée depuis un site web, pas depuis un fichier de votre ordinateur. Par sécurité, l’outil ne crée, ne sauvegarde ni ne contrôle aucune clé dans ce cas, et rien n’a été fait. Téléchargez le fichier dont l’empreinte a été publiée et ouvrez-le depuis votre disque.',
     privateTip: 'Conseil : travaillez dans une fenêtre de navigation privée, sans extensions, et fermez cette page quand vous avez fini.',
 
     home: {
@@ -18125,8 +18152,8 @@ var AgeEncryption = (() => {
       another: 'Tirer une autre phrase',
       own: 'Choisir ma propre phrase (utilisateurs avancés)',
       generated: 'Revenir à une phrase tirée au hasard',
-      ownLabel: 'Ma phrase secrète (12 caractères au minimum)',
-      ownHelp: 'Une longue phrase que vous seul connaissez. Elle doit être retapée à l’identique (accents et majuscules compris).',
+      ownLabel: 'Ma phrase secrète (20 caractères et 4 mots au minimum)',
+      ownHelp: 'Une longue phrase de plusieurs mots que vous seul connaissez. Elle doit être retapée à l’identique (majuscules comprises). Force non estimée : la sécurité de la sauvegarde est exactement celle de cette phrase, et quiconque obtient le fichier peut en tester autant qu’il veut sur son ordinateur. Une phrase tirée au hasard est plus sûre.',
       strength: n => 'Force estimée : environ ' + n + ' bits.',
       written: 'J’ai noté ma phrase secrète sur papier.',
       confirmLabel: 'Retapez la phrase pour confirmer',
@@ -18212,6 +18239,7 @@ var AgeEncryption = (() => {
       wrongPhrase: 'Impossible d’ouvrir la sauvegarde : phrase secrète incorrecte, ou fichier abîmé.',
       cardMismatch: 'Les clés de la sauvegarde ne correspondent pas à la fiche de clé fournie.',
       cardInvalid: 'La fiche de clé fournie n’est pas valide.',
+      wrongCost: 'Ce fichier est protégé avec un coût de calcul inhabituel : il a été modifié ou créé par un autre outil. Il est refusé par prudence ; refaites une sauvegarde avec cet outil.',
       keysBroken: 'Les clés contenues dans la sauvegarde ne fonctionnent pas : la sauvegarde est refusée.',
     },
   });
@@ -18271,6 +18299,7 @@ var AgeEncryption = (() => {
     if (!(error instanceof B.BackupError)) return E.generic;
     if (/not a passphrase-protected age file/.test(m)) return E.wrongFile;
     if (/wrong passphrase/.test(m)) return E.wrongPhrase;
+    if (/unsupported scrypt cost/.test(m)) return E.wrongCost;
     if (/do not match the published key card/.test(m)) return E.cardMismatch;
     if (/key card/.test(m)) return E.cardInvalid;
     if (/phrase secrète/.test(m)) return m;
@@ -18489,8 +18518,9 @@ var AgeEncryption = (() => {
     doc.title = T.title;
     doc.getElementById('brand').textContent = T.brand;
     doc.getElementById('tagline').textContent = T.tagline + ' — ' + T.version;
-    if (root.location.protocol !== 'file:') main.before(h('div', { class: 'container notes' }, notice('warn', null, T.hostedWarning)));
     doc.getElementById('footer').replaceChildren(p(T.footer), p(T.privateTip));
+    // K4: keys are never created, backed up or checked from a web page: only from the published file opened from the disk.
+    if (root.location.protocol !== 'file:') { show(T.home.title, notice('err', null, T.hostedBlocked)); return; }
     if (!await supported()) { show(T.home.title, notice('err', null, T.unsupported)); return; }
     home();
   }

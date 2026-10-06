@@ -4,7 +4,7 @@ Ce document décrit **comment** publier le fichier. Il ne le publie pas : rien n
 
 ## Principe
 
-L'outil crée les clés privées du client. Il est donc distribué comme **fichier à télécharger**, que le client ouvre depuis son disque (`file://`), et **jamais comme page web à utiliser en ligne** : une page servie par un site oblige à faire confiance au site à chaque ouverture, alors qu'un fichier dont l'empreinte est contrôlée ne dépend plus de l'hébergeur. Ce dossier n'est pas publié sur GitHub Pages et ne doit pas l'être.
+L'outil crée les clés privées du client (il refuse d'ailleurs de créer, sauvegarder ou contrôler quoi que ce soit s'il est ouvert depuis un site web : seul le fichier ouvert depuis le disque fonctionne). Il est donc distribué comme **fichier à télécharger**, que le client ouvre depuis son disque (`file://`), et **jamais comme page web à utiliser en ligne** : une page servie par un site oblige à faire confiance au site à chaque ouverture, alors qu'un fichier dont l'empreinte est contrôlée ne dépend plus de l'hébergeur. Ce dossier n'est pas publié sur GitHub Pages et ne doit pas l'être.
 
 ## Conditions avant toute publication publique
 

@@ -32,9 +32,10 @@ const sha = data => createHash('sha256').update(data).digest('hex');
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'keys-backup-'));
 process.on('exit', () => fs.rmSync(tmp, { recursive: true, force: true }));
 
-// A seal around a crafted archive, with a cheap scrypt so that the many strictness cases stay fast.
-async function sealRaw(archive, workFactor) {
-  const e = new A.Encrypter(); e.setPassphrase(PASSPHRASE); e.setScryptWorkFactor(workFactor || 10);
+// A seal around a crafted archive. 2^18 is the only cost the tool accepts when it opens a backup (K3), so the many
+// strictness cases use it too; a different one is passed explicitly by the K3 cases.
+async function sealRaw(archive, workFactor, passphrase) {
+  const e = new A.Encrypter(); e.setPassphrase(passphrase === undefined ? PASSPHRASE : passphrase); e.setScryptWorkFactor(workFactor || 18);
   return e.encrypt(archive);
 }
 const enc = new TextEncoder();
@@ -108,11 +109,34 @@ const enc = new TextEncoder();
   }
 
   // 4. Passphrase rules, and no backup is returned when it is refused or when the keys are not usable.
-  for (const bad of ['short', '', 'x'.repeat(11), ' leading space is refused here', 'trailing space is refused here ', 'line\nbreak is refused here', 'tab\there is refused', undefined, 12345678901234]) {
+  for (const bad of ['short', '', 'x'.repeat(11), ' leading space is refused here', 'trailing space is refused here ', 'line\nbreak is refused here', 'tab\there is refused', undefined, 12345678901234,
+    // K1: the phrases of the security review (12 characters, or a single repeated one) and a long one that is not several words
+    'aaaaaaaaaaaa', 'motdepasse12', '123456789012', 'a'.repeat(40), 'abcabc abcabc abcabc abcabc', 'unseulmotbeaucouptroplongmaisunseulmot', 'one two three']) {
     await rejects(B.backup(keys.files, bad), /phrase secrète/);
   }
-  await B.backup(keys.files, 'twelve chars');   // exactly the minimum
+  await B.backup(keys.files, 'quatre mots font vingt');   // 4 words, 22 characters: accepted
   await B.backup(keys.files, 'phrase accentuée très sûre 😀');
+  // K2: composed or decomposed accents are the same phrase. The backup is written with the NFC form and opens with either.
+  const composed = 'café éléphant àçè famille', decomposed = composed.normalize('NFD');
+  assert.notEqual(composed, decomposed);
+  const accented = await B.backup(keys.files, decomposed);                   // typed decomposed, stored as NFC
+  await B.restoreTest(accented.bytes, composed); await B.restoreTest(accented.bytes, decomposed);
+  const viaAge = new A.Decrypter(); viaAge.addPassphrase(composed);          // the standard tool, given the NFC form, opens it too
+  assert.ok((await viaAge.decrypt(accented.bytes)).length > 0);
+  const unsealed = new A.Decrypter(); unsealed.addPassphrase(PASSPHRASE);
+  const archiveBytes = await unsealed.decrypt(made.bytes);
+  const legacy = await sealRaw(archiveBytes, 18, decomposed);                // an earlier version sealed with the phrase as typed
+  await B.restoreTest(legacy, decomposed);
+  await rejects(B.restoreTest(accented.bytes, composed + ' '), /wrong passphrase/);
+  // K3: only the scrypt cost 2^18 is accepted when a backup is opened: a weakened file is not "valid", a costly one is not tried.
+  for (const cost of [1, 10, 17, 19, 20]) {
+    await rejects(B.restoreTest(await sealRaw(archiveBytes, cost), PASSPHRASE), /unsupported scrypt cost/);
+  }
+  await B.restoreTest(await sealRaw(archiveBytes, 18), PASSPHRASE);          // control: 2^18 is accepted
+  assert.equal(B._internals.scryptLogN(made.bytes), 18);
+  for (const broken of ['age-encryption.org/v1\n-> scrypt \n', 'age-encryption.org/v1\n-> scrypt c2FsdA 18x\n', 'age-encryption.org/v1\n-> X25519 abc\n']) {
+    assert.throws(() => B._internals.scryptLogN(enc.encode(broken)), /not a passphrase-protected age file/);
+  }
   await rejects(B.backup({ ...keys.files, 'signing.pem': other.files['signing.pem'] }, PASSPHRASE), /does not match client.json/);
   await rejects(B.backup({ ...keys.files, 'age-identity.txt': other.files['age-identity.txt'] }, PASSPHRASE), /does not match the recipient/);
   await rejects(B.backup({ ...keys.files, 'age-identity.txt': '# no secret here\n' }, PASSPHRASE), /age identity is missing/);
