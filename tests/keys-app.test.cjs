@@ -40,7 +40,7 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
   const csp = /Content-Security-Policy" content="([^"]+)"/.exec(html.toString('utf8'))[1];
   for (const directive of ["default-src 'none'", "connect-src 'none'", "img-src 'none'", "base-uri 'none'", "form-action 'none'", "object-src 'none'", "frame-src 'none'"]) assert.ok(csp.includes(directive), directive);
   assert.ok(!/unsafe-inline|unsafe-eval|https?:/.test(csp), 'CSP must not weaken or name an origin');
-  const markup = html.toString('utf8').replace(/<script>[\s\S]*?<\/script>/g, '<script></script>').replace(/<style>[\s\S]*?<\/style>/g, '<style></style>');
+  const markup = html.toString('utf8').replace(/<script>[\s\S]*?<\/script>/g, '<script></script>').replace(/<style>[\s\S]*?<\/style>/g, '<style></style>').replace(/ xmlns="http:\/\/www\.w3\.org\/2000\/svg"/g, '');   // an XML namespace name is not a resource
   assert.ok(!/<script[^>]+src=|<link|<img|<iframe|<object|<embed|<form|@import|https?:/i.test(markup), 'no external resource in the page markup');
   assert.ok(!/@import|url\(\s*['"]?(https?:|\/\/)/i.test(fs.readFileSync('keys/app/app.css', 'utf8')), 'no external resource in the style sheet');
 
@@ -68,6 +68,17 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       const file = path.join(tmp, name); await download.saveAs(file); return { file, suggested: download.suggestedFilename() };
     };
     const problemText = async page => (await page.locator('#problem').innerText()).trim();
+    // The look is the verifier's: messages are "banners" with a coloured station, no dashed frame, no orange side stripe.
+    const checkLook = async (page, where) => {
+      const bad = await page.evaluate(() => [...document.querySelectorAll('body *')].filter(el => {
+        const c = getComputedStyle(el);
+        return ['Top', 'Right', 'Bottom', 'Left'].some(side => c['border' + side + 'Style'] === 'dashed' || (c['border' + side + 'Style'] === 'solid' && parseFloat(c['border' + side + 'Width']) >= 4));
+      }).map(el => el.tagName + '.' + el.className));
+      assert.deepEqual(bad, [], where + ': dashed or thick-stripe border');
+      assert.equal(await page.locator('.notice').count(), 0, where + ': old notice style');
+      assert.equal(await page.locator('.fond .chemin').count(), 2, where + ': background routes');
+      assert.equal(await page.locator('header.top .logo').count(), 1, where + ': header logo');
+    };
     // Messages of the asynchronous steps appear after a short busy state: wait for them instead of racing.
     const expectProblem = async (page, regex) => {
       await page.waitForFunction(([source, flags]) => new RegExp(source, flags).test(document.querySelector('#problem').innerText), [regex.source, regex.flags]);
@@ -80,6 +91,7 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       await page.goto(url);
       await page.waitForSelector('[data-action=create]');
       assert.equal(await page.title(), 'Diadroma — Mes clés');
+      await checkLook(page, 'home');
       await page.click('[data-action=create]');
       // validation first
       await page.click('button[type=submit]');
@@ -89,6 +101,7 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       assert.match(await page.inputValue('#recipient-id'), /^age-\d{4}-\d{2}$/);
       await page.fill('#signing-id', 'sign-2026-10'); await page.fill('#recipient-id', 'age-2026-10'); await page.click('button[type=submit]');
       await page.waitForSelector('#phrase');
+      await checkLook(page, 'passphrase');
       // keys exist but nothing secret is offered yet
       assert.equal(await page.locator('[data-file]').count(), 0);
       const phrase = (await page.locator('#phrase').innerText()).trim();
@@ -124,6 +137,7 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       await page.setInputFiles('#proof-file', backup.file); await page.click('#proof-phrase-show'); assert.equal(await page.getAttribute('#proof-phrase', 'type'), 'text');
       await page.click('button[type=submit]');
       await page.waitForSelector('#finish');
+      await checkLook(page, 'delivery');
       // delivery: every file, then independent checks
       const got = {};
       for (const name of ['client.json', 'signing.pem', 'age-identity.txt', 'key-card.json']) got[name] = fs.readFileSync((await saveDownload(page, `[data-file="${name}"]`, 'got-' + name)).file, 'utf8');
@@ -175,14 +189,16 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       await page.goto(url); await page.click('[data-action=verify]');
       await page.setInputFiles('#check-file', vector('backup-python.age')); await page.fill('#check-phrase', PYTHON_PASSPHRASE);
       await page.setInputFiles('#check-card', vector('key-card.json')); await page.click('button[type=submit]');
-      await page.waitForSelector('#out .notice.ok');
+      await page.waitForSelector('#out .banner.success');
       const text = await page.locator('#out').innerText();
+      assert.ok(!/\bnull\b|undefined/.test(text), 'stray null in the result');
+      await checkLook(page, 'verify');
       assert.ok(text.includes('10111213-1415-4617-9819-1a1b1c1d1e1f') && text.includes('65b60673d6ed884bf01c2c222d82ada0740f29ac3355d6a925c81f17f47a27b8') && text.includes('correspond'));
       assert.equal(await page.locator('[data-file]').count(), 0, 'verifying never hands out keys');
       // wrong phrase, wrong card, unreadable card
       await page.fill('#check-phrase', PYTHON_PASSPHRASE + '!'); await page.click('button[type=submit]');
       await expectProblem(page, /phrase secrète incorrecte/);
-      assert.equal(await page.locator('#out .notice.ok').count(), 0);
+      assert.equal(await page.locator('#out .banner.success').count(), 0);
       await page.fill('#check-phrase', PYTHON_PASSPHRASE);
       const otherCard = JSON.parse(fs.readFileSync(vector('key-card.json'), 'utf8')); otherCard.client_id = otherCard.client_id.replace(/^1/, '2');
       fs.writeFileSync(path.join(tmp, 'other-card.json'), JSON.stringify(otherCard));
@@ -220,7 +236,7 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
     {
       const { context, page } = await open();
       await page.addInitScript(() => { const original = SubtleCrypto.prototype.generateKey; SubtleCrypto.prototype.generateKey = function (algorithm, ...rest) { if (algorithm && algorithm.name === 'X25519') return Promise.reject(new Error('unsupported')); return original.call(this, algorithm, ...rest); }; });
-      await page.goto(url); await page.waitForSelector('.notice.err');
+      await page.goto(url); await page.waitForSelector('.banner.error');
       assert.match(await page.locator('main').innerText(), /ne sait pas créer les clés/);
       assert.equal(await page.locator('[data-action]').count(), 0);
       await context.close();

@@ -14,7 +14,7 @@ const read = rel => fs.readFileSync(path.join(root, rel), 'utf8');
 const sha256 = data => createHash('sha256').update(data).digest();
 const cspHash = text => "'sha256-" + sha256(text).toString('base64') + "'";
 
-const STYLES = ['style/tokens.css', 'keys/app/app.css'];
+const STYLES = ['style/tokens.css', 'style/style.css', 'keys/app/app.css'];   // the verifier's own look first, then this tool's additions
 const SCRIPTS = ['keys/keys-core.js', 'keys/wordlist.js', 'v2b.js', 'keys/vendor/age-encryption.bundle.js', 'keys/keys-backup.js', 'keys/app/texts.fr.js', 'keys/app/app.js'];
 
 function build() {

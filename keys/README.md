@@ -73,6 +73,8 @@ reconstruit et exige un résultat identique aux fichiers commités (vérifié pa
 `texts.fr.js` **tous les textes**, `app.css`, `template.html`), plus les modules des lots 1 et 2, la liste de mots, `v2b.js` (contrôle de la
 fiche de clé) et la bibliothèque age vendorée.
 
+Style : le même que le vérificateur (`style/tokens.css` et `style/style.css` sont intégrés tels quels au fichier, `keys/app/app.css` n'ajoute que ce qui manque aux écrans à formulaires) : en-tête avec logo, tracés en fond, messages à « station » colorée, cartes grises, boutons pastille, clair et sombre. Pas de bandeau orange ni de cadre en pointillés (contrôlé par le test).
+
 Parcours : accueil → **créer** (clés en mémoire) → **phrase secrète** (7 mots tirés au hasard, à noter sur papier et à retaper ; ou phrase
 choisie, 12 caractères au moins) → **fichier de sauvegarde** → **preuve** (le client choisit le fichier téléchargé et retape la phrase
 depuis son papier ; la phrase n'est plus affichée) → **livraison** (`client.json`, `signing.pem`, `age-identity.txt`, `key-card.json`

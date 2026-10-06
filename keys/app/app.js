@@ -25,7 +25,10 @@
     return el;
   }
   const p = (text, cls) => h('p', { class: cls, text });
-  const notice = (kind, title, text) => h('div', { class: 'notice ' + kind, role: kind === 'err' ? 'alert' : 'status' }, title ? h('strong', { text: title }) : null, text);
+  const panel = form => h('section', { class: 'options' }, form);   // the verifier's grey rounded card for forms
+  // Messages look like the verifier's: a coloured station before the text (success = mint, error = red, pending = amber ring).
+  const BANNER = { ok: 'success', err: 'error', warn: 'pending' };
+  const notice = (kind, title, text) => h('div', { class: 'banner ' + BANNER[kind], role: kind === 'err' ? 'alert' : 'status' }, title ? h('strong', { text: title }) : null, text ? h('p', { text }) : null);
   const tick = () => new Promise(resolve => root.setTimeout(resolve, 30));   // let the browser paint before heavy work
 
   function show(title, ...content) {
@@ -77,7 +80,7 @@
     return h('ol', { class: 'steps', 'aria-label': T.create.title },
       T.create.steps.map((text, i) => h('li', { class: i < current ? 'done' : i === current ? 'current' : '', 'aria-current': i === current ? 'step' : null, text })));
   }
-  function facts(rows) { return h('dl', { class: 'facts' }, rows.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })])); }
+  function facts(rows) { return h('dl', { class: 'facts' }, rows.map(([k, v]) => h('div', {}, h('dt', { text: k }), h('dd', { text: v })))); }
   function errorBox() { return h('div', { id: 'problem', 'aria-live': 'assertive' }); }
   function setProblem(text) { const box = doc.getElementById('problem'); box.replaceChildren(text ? notice('err', null, text) : ''); }
   async function busy(button, message, work) {
@@ -121,7 +124,7 @@
     h('label', { class: 'inline' }, responsible, T.create.responsible), p(T.create.responsibleHelp, 'help'),
     field('signing-id', T.create.signingId, signing), field('recipient-id', T.create.recipientId, recipient), p(T.create.idHelp, 'help'),
     errorBox(), h('div', { class: 'row' }, submit), busyBox());
-    show(T.create.title, steps(0), form);
+    show(T.create.title, steps(0), panel(form));
   }
 
   // ---- create: 2. passphrase and backup file ----
@@ -136,7 +139,7 @@
     const written = h('input', { type: 'checkbox', id: 'written' });
     const confirm = h('input', { type: 'text', id: 'confirm', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'none' });
     const submit = h('button', { class: 'primary', type: 'submit', text: T.passphrase.submit });
-    const result = h('div', { id: 'result' });
+    const result = h('div', { id: 'backup-result' });
     function draw() {
       const g = B.generatePassphrase();
       state.passphrase = g.passphrase; phraseBox.textContent = g.passphrase; strength.textContent = T.passphrase.strength(g.entropyBits);
@@ -172,7 +175,7 @@
     h('div', { class: 'row' }, another, toggle), ownBlock,
     h('label', { class: 'inline' }, written, T.passphrase.written), field('confirm', T.passphrase.confirmLabel, confirm),
     errorBox(), h('div', { class: 'row' }, submit), busyBox(), result);
-    show(T.passphrase.title, steps(1), form);
+    show(T.passphrase.title, steps(1), panel(form));
     draw();
   }
 
@@ -194,7 +197,7 @@
         } catch (error) { setProblem((error instanceof B.BackupError || error instanceof K.KeysError ? frenchError(error) + T.errors.hint : error.message)); }
       });
     } }, p(T.proof.intro), field('proof-file', T.proof.file, file), pass.nodes, errorBox(), h('div', { class: 'row' }, submit), busyBox());
-    show(T.proof.title, steps(2), form);
+    show(T.proof.title, steps(2), panel(form));
   }
 
   // ---- create: 4. delivery ----
@@ -210,7 +213,6 @@
       h('div', { class: 'row' }, T.delivery.secretFiles.map(([name]) => button(name, name, state.keys.files[name]))),
       h('h2', { text: T.delivery.publicTitle }), p(T.delivery.publicText),
       h('div', { class: 'row' }, button(T.delivery.cardFile, T.delivery.cardFile, state.keys.cardText)),
-      h('h2', { text: T.delivery.sheetTitle }),
       h('div', { class: 'sheet', id: 'fiche' }, h('h2', { text: T.delivery.sheetTitle + ' — ' + T.brand }), p(T.delivery.sheetText, 'muted'), facts(sheetRows),
         h('ul', { class: 'checklist' }, T.delivery.checklist.map(item => h('li', { text: '☐ ' + item })))),
       h('div', { class: 'row' }, h('button', { class: 'primary', type: 'button', id: 'print', text: T.delivery.print, onclick: () => root.print() })),
@@ -238,16 +240,16 @@
           const result = restoring ? await B.restore(bytes, pass.input.value, options) : { facts: await B.restoreTest(bytes, pass.input.value, options) };
           pass.input.value = '';
           const x = result.facts;
-          out.replaceChildren(notice('ok', T.check.okTitle, restoring ? T.check.restoredText : T.check.okText),
+          out.replaceChildren(...[notice('ok', T.check.okTitle, restoring ? T.check.restoredText : T.check.okText),
             facts([[T.check.facts.client, x.client_id], [T.check.facts.fingerprint, x.signing_key_fingerprint_sha256], [T.check.facts.recipient, x.recipient],
               [T.check.facts.created, x.backup_created_at], [T.check.facts.card, x.key_card_matched ? T.check.cardYes : T.check.cardNo]]),
-            restoring ? h('div', { class: 'row' }, T.delivery.secretFiles.map(([name]) => h('button', { class: 'primary', type: 'button', 'data-file': name, text: T.delivery.download + name, onclick: () => downloadText(name, result.files[name]) }))) : null);
+            restoring ? h('div', { class: 'row' }, T.delivery.secretFiles.map(([name]) => h('button', { class: 'primary', type: 'button', 'data-file': name, text: T.delivery.download + name, onclick: () => downloadText(name, result.files[name]) }))) : null].filter(Boolean));
         } catch (error) { setProblem(error instanceof B.BackupError || error instanceof K.KeysError ? frenchError(error) + T.errors.hint : error.message); }
       });
     } }, p(T.check.intro), field('check-file', T.check.file, file), pass.nodes, field('check-card', T.check.card, card, T.check.cardHelp),
     errorBox(), h('div', { class: 'row' }, submit), busyBox(), out,
     h('div', { class: 'row' }, h('button', { class: 'link', type: 'button', text: T.check.back, onclick: home })));
-    show(restoring ? T.check.restoreTitle : T.check.verifyTitle, form);
+    show(restoring ? T.check.restoreTitle : T.check.verifyTitle, panel(form));
   }
 
   // ---- start: can this browser do it at all? ----
@@ -266,9 +268,8 @@
     doc.title = T.title;
     doc.getElementById('brand').textContent = T.brand;
     doc.getElementById('tagline').textContent = T.tagline + ' — ' + T.version;
-    doc.getElementById('footer').textContent = T.footer;
-    if (root.location.protocol !== 'file:') main.before(notice('warn', null, T.hostedWarning));
-    main.before(h('p', { class: 'muted', text: T.privateTip }));
+    if (root.location.protocol !== 'file:') main.before(h('div', { class: 'container notes' }, notice('warn', null, T.hostedWarning)));
+    doc.getElementById('footer').replaceChildren(p(T.footer), p(T.privateTip));
     if (!await supported()) { show(T.home.title, notice('err', null, T.unsupported)); return; }
     home();
   }
