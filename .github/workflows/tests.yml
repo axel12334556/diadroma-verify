@@ -27,6 +27,11 @@ jobs:
           REQUIRE_AGE=1 node tests/keys-core.test.cjs
           REQUIRE_AGE=1 node tests/age-vendor.test.cjs
           REQUIRE_AGE=1 node tests/keys-backup.test.cjs
+      - name: Outil de clés dans un vrai navigateur (fichier unique ouvert depuis le disque)
+        # playwright-core ne sert qu'à piloter Chrome pendant ce test ; il n'est jamais livré. Version exacte, installée hors du dépôt.
+        run: |
+          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/pw" playwright-core@1.56.1
+          PLAYWRIGHT_MODULE="$RUNNER_TEMP/pw/node_modules/playwright-core" CHROME_PATH="$(command -v google-chrome)" REQUIRE_BROWSER=1 node tests/keys-app.test.cjs
       - name: Tests JavaScript sans réseau
         run: |
           node tests/merkle.test.cjs
