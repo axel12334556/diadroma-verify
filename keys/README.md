@@ -92,8 +92,9 @@ Garanties, contrôlées par `tests/keys-app.test.cjs` (Chromium réel, page ouve
   client ou illisible ; navigateur sans Ed25519/X25519 ; écran étroit sans défilement horizontal ;
 - sauvegarde faite par l'outil Python ouverte, vérifiée et restaurée dans l'interface.
 
-**Pas encore fait** : Safari et Firefox en `file://` (seul Chromium est testé automatiquement, voir `TEST_NAVIGATEURS.md` pour le test à la
-main) ; revue de sécurité indépendante et essai avec un volontaire non technique (lot 4) ; version anglaise des textes ; publication du
+**Navigateurs** : Chromium est testé automatiquement ; Safari et Firefox en `file://` ont été validés à la main le 2026-10-06 (parcours complet de `TEST_NAVIGATEURS.md` ; versions et système à relever dans ce fichier).
+
+**Pas encore fait** : revue de sécurité indépendante et essai avec un volontaire non technique (lot 4) ; version anglaise des textes ; publication du
 fichier avec son empreinte (non publié sur GitHub Pages ; hébergement d'une page de démonstration : décision « non pour l'instant »).
 
 **Vérifier un fichier reçu** : `shasum -a 256 diadroma-cles.html` doit afficher l'empreinte publiée.
