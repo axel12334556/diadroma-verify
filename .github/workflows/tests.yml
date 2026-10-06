@@ -34,6 +34,7 @@ jobs:
           node tests/truststore.test.cjs
           node tests/dbomview.test.cjs
           node tests/disclosure.test.cjs
+          node tests/report.test.cjs
       - name: Vecteurs v2b identiques au vérificateur Python de référence
         run: |
           python -m pip install cryptography rfc8785

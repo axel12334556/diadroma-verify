@@ -97,3 +97,16 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 @media (max-width: 560px) { .dbom-rows > div { grid-template-columns: 1fr; } }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } .options button:hover, #memoryBtn:hover, .dropzone:hover, .options input[type=file]::file-selector-button:hover { transform: none; } }
+
+/* Rapport exportable : boutons à l'écran, mise en page propre à l'impression (sans le contenu du DBoM) */
+.print-only { display: none; }
+.report-actions { margin: 1.5rem 0; }
+.report-actions button { margin: 0 .75rem .5rem 0; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; }
+.report-actions button:hover { background: var(--marine-survol); }
+@media print {
+  .fond, .top, .dropzone, #result, #v2bOptions, #dbomView, #disclosureReport, #reportActions { display: none !important; }
+  .print-only { display: block; }
+  body { background: #fff; color: #000; }
+  .check, .banner, .limits { break-inside: avoid; }
+  .dbom-rows dd { overflow-wrap: anywhere; }
+}
