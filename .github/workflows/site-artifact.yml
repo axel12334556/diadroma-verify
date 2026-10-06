@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
       - name: Assembler les fichiers autorisés
@@ -32,8 +32,12 @@ jobs:
           done
           test ! -e site/cli
           test ! -e site/tests
+          # Publish the fingerprint of every served file, so an auditor can compare what the page runs (review V10)
+          (cd site && find . -type f ! -name SHA256SUMS | sed 's#^\./##' | LC_ALL=C sort | xargs sha256sum > SHA256SUMS)
+          test -s site/SHA256SUMS
+          cat site/SHA256SUMS
       - name: Déposer l'artefact de contrôle (pas de déploiement)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: diadroma-site-review
           path: site/
