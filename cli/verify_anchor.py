@@ -87,7 +87,8 @@ def verify(proof, fetcher=fetch_block, extractor=ots_attestations):
                 block = fetcher(height)
                 if bytes.fromhex(attested)[::-1].hex() == block['merkle_root']:
                     result['on_chain_confirmed'] = True
-                    result['conclusion'] = f'Preuve confirmée: le hash fourni est relié par cette preuve au bloc Bitcoin n° {height}.'
+                    result['conclusion'] = (f"Horodatage seul, sans signature : le hash fourni est relié par cette preuve au bloc Bitcoin n° {height}. "
+                                            'Ce fichier de l\'ancien format ne contient aucune signature : rien ne le rattache à un client ni à Diadroma, et n\'importe qui peut horodater n\'importe quel hash.')
                     return result
             except (OSError, TimeoutError, ValueError, KeyError, TypeError):
                 failed_network = True

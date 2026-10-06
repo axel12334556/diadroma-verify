@@ -44,3 +44,7 @@ Depuis la racine du dépôt : `node tests/merkle.test.cjs`, `node tests/ots.test
 ## Licence
 
 Code de ce dépôt sous licence MIT (voir `LICENSE`). Cette licence ne s'applique pas au dépôt privé ni aux données métier de Diadroma.
+
+## Savoir quel code la page exécute
+
+À chaque publication, le fichier `SHA256SUMS` (https://verify.diadroma.fr/SHA256SUMS) liste l'empreinte SHA-256 de chaque fichier servi. Pour contrôler ce que votre navigateur exécute, téléchargez un fichier de la page et comparez son empreinte à celle de cette liste ; pour contrôler la liste elle-même, reconstruisez le site depuis ce dépôt (les fichiers publiés sont ceux nommés dans `.github/workflows/deploy-pages.yml`). Les actions GitHub de publication sont épinglées par empreinte de commit.

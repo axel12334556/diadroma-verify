@@ -9,6 +9,7 @@
   const REPORT_FORMAT = 'diadroma-verification-report-v1';
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
   const HEX64 = /^[0-9a-f]{64}$/;
+  const FINGERPRINT_SOURCES = ['typed', 'key_card', 'device_memory'];
   const STATEMENT = "Rapport non signé, établi par la page de vérification Diadroma à partir du fichier de preuve dont l'empreinte SHA-256 figure ci-dessous. Il n'est pas un certificat : seule la preuve d'origine fait foi, et la vérification peut être rejouée à tout moment à partir d'elle.";
   const LIMITS = [
     "Cette vérification établit qu'une empreinte a été signée par la clé indiquée, rattachée à un lot et, au niveau le plus haut, qu'elle existait au plus tard au moment d'un bloc Bitcoin.",
@@ -32,7 +33,7 @@
     if (Object.prototype.toString.call(generatedAt) !== '[object Date]' || Number.isNaN(generatedAt.getTime())) throw new Error('date invalide');
     const manifest = manifestOf(proofDoc), anchor = (proofDoc && proofDoc.anchor) || {};
     const given = inputs || {};
-    const level = T.LEVEL_TEXT[result.level];
+    const level = T.levelText(result.level, result.signing_key_authenticated === true);
     return {
       format: REPORT_FORMAT,
       format_version: 1,
@@ -55,6 +56,8 @@
       },
       inputs: {
         trusted_fingerprint_provided: given.trustedFingerprintProvided === true,
+        trusted_fingerprint: pick(given.trustedFingerprint, HEX64),
+        trusted_fingerprint_source: HEX64.test(given.trustedFingerprint || '') && FINGERPRINT_SOURCES.includes(given.trustedFingerprintSource) ? given.trustedFingerprintSource : null,
         key_card_provided: given.keyCardProvided === true,
         block_root_provided: given.blockRootProvided === true,
         block_read_from_blockstream: given.blockReadFromBlockstream === true,

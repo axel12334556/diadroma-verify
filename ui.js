@@ -1,3 +1,4 @@
+const FINGERPRINT_SOURCE_TEXT = { key_card: 'fiche de clé déposée', device_memory: 'mémoire de cet appareil', typed: 'saisie à la main' };
 const MAX_FILE_BYTES = 1024 * 1024;
 const MAX_CARD_BYTES = 64 * 1024;
 const dropzone = document.getElementById('dropzone');
@@ -26,6 +27,7 @@ let dropSeq = 0; // numbers the dropped files: a file read that finishes after a
 let generation = 0; // incremented by every drop or verification: a result is shown only if no newer one was started (V2)
 let currentLegacy = null; // old-format proof (timestamp only, no signature) dropped by the user
 let currentV2b = null;
+let currentV2bResult = null; // verdict for currentV2b: a disclosure is bound to a proof only if this one is sound (V6)
 let currentProofSha256 = null; // SHA-256 of the exact bytes of the dropped proof file (null if it could not be computed)
 let currentReport = null; // the exportable verification report for the last v2b run
 let memorizedFor = null; // client dont l'empreinte vient de la mémoire de cet appareil (null sinon)
@@ -46,7 +48,7 @@ function el(tag, className, text) {
 }
 function renderV2b(result) {
   const T = ChainDBoMV2bText;
-  const level = T.LEVEL_TEXT[result.level];
+  const level = T.levelText(result.level, result.signing_key_authenticated);
   v2bReport.replaceChildren();
   const banner = el('div', 'banner ' + level.cls);
   banner.append(el('strong', '', level.title), el('p', '', level.text));
@@ -105,6 +107,8 @@ const DISCLOSURE_LABELS = { structure: 'Structure du paquet', signing_key_trust:
 const DISCLOSURE_STATUS = { pass: 'Réussi', fail: 'Échec', skipped: 'Non vérifié', warn: 'À noter' };
 const DISCLOSURE_MARK = { pass: '✔', fail: '✘', skipped: '–', warn: '!' };
 function proofFacts() {
+  // V6: bound only to a proof that passed the integrity level AND whose signing key is authenticated; otherwise "not verified".
+  if (!currentV2bResult || currentV2bResult.level_rank < 1 || !currentV2bResult.signing_key_authenticated) return null;
   const m = currentV2b && currentV2b.proof_only && currentV2b.proof_only.submission && currentV2b.proof_only.submission.signed_manifest;
   return m && typeof m.record_hash === 'string' ? { recordHash: m.record_hash, clientId: m.client_id } : null;
 }
@@ -154,7 +158,7 @@ function refreshReport(result, options, doc, proofSha256) {
   if (!proofSha256) return;
   try {
     currentReport = ChainDBoMReport.buildReport({ result, proofDoc: doc, proofSha256, generatedAt: new Date(),
-      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(),
+      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), trustedFingerprint: options.reportFingerprint, trustedFingerprintSource: options.reportFingerprintSource, keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(),
         blockReadFromBlockstream: !!options.fetchBlock, dbomProvided: !!options.dbomBytes } });
   } catch { return; }
   const r = currentReport, rows = el('dl', 'dbom-rows');
@@ -166,6 +170,7 @@ function refreshReport(result, options, doc, proofSha256) {
   add('Établi le', r.generated_at);
   add('Niveau atteint', r.verdict.level + ' — ' + r.verdict.level_title);
   add('Clé de signature authentifiée', r.verdict.signing_key_authenticated ? 'oui' : 'non');
+  add('Empreinte de confiance utilisée', r.inputs.trusted_fingerprint ? r.inputs.trusted_fingerprint + ' (' + FINGERPRINT_SOURCE_TEXT[r.inputs.trusted_fingerprint_source] + ')' : 'aucune');
   add('Éléments fournis par le vérifiant', [r.inputs.trusted_fingerprint_provided && 'empreinte de confiance', r.inputs.key_card_provided && 'fiche de clé',
     r.inputs.block_root_provided && 'racine de bloc', r.inputs.block_read_from_blockstream && 'bloc lu auprès de Blockstream', r.inputs.dbom_provided && 'DBoM en clair (non repris)'].filter(Boolean).join(', ') || 'aucun');
   reportActions.hidden = false;
@@ -176,6 +181,9 @@ async function runV2b() {
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
     blockMerkleRoot: optRoot.value.trim() || undefined,
     fetchBlock: optFetch.checked && !optRoot.value.trim() };
+  const fingerprint = currentFingerprint(); // V9: the report states which fingerprint was used and where it came from
+  options.reportFingerprint = fingerprint;
+  options.reportFingerprintSource = !fingerprint ? null : cardClientId ? 'key_card' : memorizedFor ? 'device_memory' : 'typed';
   if (optDbom.files.length) {
     const file = optDbom.files[0];
     if (file.size > MAX_FILE_BYTES) { show('error', 'DBoM trop volumineux (maximum 1 Mo).'); return; }
@@ -186,6 +194,7 @@ async function runV2b() {
   try {
     const result = await ChainDBoMV2b.verify(doc, options);
     if (gen !== generation) return; // another file or run started meanwhile: this result is not shown
+    currentV2bResult = result;
     output.hidden = true;
     renderV2b(result);
     refreshReport(result, options, doc, proofSha256);
@@ -267,14 +276,20 @@ async function handleFile(file) {
     return;
   }
   generation++; // a verification still running belongs to the file being replaced: its result must not be shown
-  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentLegacy = null; currentProofSha256 = null; clearReport();
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport();
   if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }
   if (data && data.format === 'chaindbom-anchored-proof-v2b') {
     currentV2b = data;
-    try { currentProofSha256 = await ChainDBoMReport.sha256Hex(new Uint8Array(await file.arrayBuffer())); } catch { currentProofSha256 = null; }
+    let proofBytes = null;
+    try { proofBytes = new Uint8Array(await file.arrayBuffer()); currentProofSha256 = await ChainDBoMReport.sha256Hex(proofBytes); } catch { currentProofSha256 = null; }
     if (drop !== dropSeq) return;
+    try { ChainDBoMV2b.checkNumberLiterals(new TextDecoder('utf-8').decode(proofBytes)); } catch (error) { // V8: same refusal as the Python reference
+      currentV2b = null; currentProofSha256 = null;
+      show('error', 'Fichier de preuve refusé : ' + ((error && error.message) || 'nombre ambigu') + '.');
+      return;
+    }
     v2bPanel.hidden = false;
     memorizedFor = null;
     const clientId = proofClientId(data), saved = clientId && trustStore.get(clientId);
