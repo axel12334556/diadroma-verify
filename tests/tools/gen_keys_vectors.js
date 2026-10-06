@@ -3,7 +3,8 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
 const { webcrypto } = require('node:crypto');
-const ctx = vm.createContext({ crypto: webcrypto, TextEncoder, Uint8Array, atob, btoa, Date });
+const ctx = vm.createContext({ crypto: webcrypto, TextEncoder, TextDecoder, Uint8Array, atob, btoa, Date, ArrayBuffer, DataView, BigInt, Promise,
+  setTimeout, clearTimeout, queueMicrotask, ReadableStream, WritableStream, TransformStream, Blob, Response, structuredClone });  // the age bundle needs the stream globals
 vm.runInContext(fs.readFileSync('keys/keys-core.js', 'utf8'), ctx);
 const SEEDS = { signing: Uint8Array.from({ length: 32 }, (_, i) => i + 1), age: Uint8Array.from({ length: 32 }, (_, i) => 0xA0 + i), client: Uint8Array.from({ length: 16 }, (_, i) => 0x10 + i) };
 const OPTIONS = { signingKeyId: 'sign-synthetic-1', recipientKeyId: 'age-synthetic-1', now: new Date('2026-10-06T08:00:00Z'), seeds: SEEDS };
