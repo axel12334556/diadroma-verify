@@ -65,8 +65,38 @@ de `keys/wordlist.js`, contrôlés par le test).
 Les vecteurs utilisent des clés 100 % synthétiques et une phrase de test publique qui ne protège rien. `backup-js.age` change à chaque
 régénération (sel aléatoire) : `node tests/tools/gen_keys_backup_fixture.js`.
 
+## Interface et fichier unique hors ligne (lot 3)
+
+`node keys/build-app.js` assemble **un seul fichier HTML** (`keys/dist/diadroma-cles.html`, sans aucune ressource externe) et écrit son
+empreinte dans `keys/dist/diadroma-cles.html.sha256` (au format `shasum -a 256 -c`). La construction est déterministe ; `--check`
+reconstruit et exige un résultat identique aux fichiers commités (vérifié par le test). Sources : `keys/app/` (`app.js` logique,
+`texts.fr.js` **tous les textes**, `app.css`, `template.html`), plus les modules des lots 1 et 2, la liste de mots, `v2b.js` (contrôle de la
+fiche de clé) et la bibliothèque age vendorée.
+
+Parcours : accueil → **créer** (clés en mémoire) → **phrase secrète** (7 mots tirés au hasard, à noter sur papier et à retaper ; ou phrase
+choisie, 12 caractères au moins) → **fichier de sauvegarde** → **preuve** (le client choisit le fichier téléchargé et retape la phrase
+depuis son papier ; la phrase n'est plus affichée) → **livraison** (`client.json`, `signing.pem`, `age-identity.txt`, `key-card.json`
+publique, fiche récapitulative imprimable sans aucun secret). Les clés ne sont proposées **qu'après** la preuve. « Vérifier » et
+« Restaurer » rouvrent une sauvegarde existante (fiche de clé facultative).
+
+Garanties, contrôlées par `tests/keys-app.test.cjs` (Chromium réel, page ouverte en `file://`, CI : `REQUIRE_BROWSER=1`) :
+- politique de sécurité écrite dans la page avec l'empreinte de chaque script et de la feuille de style : `connect-src 'none'`, aucune
+  ressource, aucun `unsafe-inline` ; une tentative de connexion et un script injecté sont réellement bloqués ;
+- aucune requête autre que `file:`, `blob:`, `data:` ; ni `localStorage`, ni `sessionStorage`, ni cookie, ni IndexedDB ; aucun
+  `innerHTML` (tout est du texte brut) ; aucun secret ni phrase dans le texte de la page ; la feuille imprimée ne montre que des faits publics ;
+- tous les fichiers livrés sont revérifiés par du code indépendant (modules dans Node, `age-keygen -y`, vérificateur de fiche de
+  clé) et correspondent au contenu de la sauvegarde ;
+- refus : cases non cochées, nom de clé invalide, phrase retapée différente, preuve avec mauvaise phrase, mauvais fichier, fiche d'un autre
+  client ou illisible ; navigateur sans Ed25519/X25519 ; écran étroit sans défilement horizontal ;
+- sauvegarde faite par l'outil Python ouverte, vérifiée et restaurée dans l'interface.
+
+**Pas encore fait** : Safari et Firefox en `file://` (seul Chromium est testé automatiquement, voir `TEST_NAVIGATEURS.md` pour le test à la
+main) ; revue de sécurité indépendante et essai avec un volontaire non technique (lot 4) ; version anglaise des textes ; publication du
+fichier avec son empreinte (non publié sur GitHub Pages ; hébergement d'une page de démonstration : décision « non pour l'instant »).
+
+**Vérifier un fichier reçu** : `shasum -a 256 diadroma-cles.html` doit afficher l'empreinte publiée.
+
 ## Reste à faire (lots suivants)
 
-Interface et fichier unique hors ligne (lot 3) ; revue de sécurité (lot 4). Navigateurs : Ed25519 et X25519
-dans WebCrypto sont requis ; sur un navigateur qui ne les gère pas, la création est refusée avec un message clair.
-Ce dossier n'est **pas publié** sur GitHub Pages.
+Revue de sécurité indépendante et essai avec un volontaire (lot 4). Navigateurs : Ed25519 et X25519 dans WebCrypto sont requis ; sur un
+navigateur qui ne les gère pas, l'outil le dit et ne crée rien. Ce dossier n'est **pas publié** sur GitHub Pages.
