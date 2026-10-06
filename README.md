@@ -4,7 +4,7 @@ Outil de vérification d'une preuve d'ancrage OpenTimestamps/Bitcoin. **Version 
 
 ## Utilisation web
 
-Après publication et validation de GitHub Pages (pas encore effectuées), déposer un fichier `proof.json` dans l'interface. Pour un essai local : `python3 -m http.server 8000`, puis ouvrir `http://localhost:8000` et choisir `tests/valid_single.json`. Aucun logiciel propriétaire ni compte Diadroma n'est nécessaire. Le calcul Merkle et le décodage `.ots` ont lieu dans le navigateur ; seuls les identifiants des blocs demandés sont transmis à l'API publique Blockstream. Ne pas confondre l'existence du dépôt GitHub avec une URL Pages active.
+La page est publiée à **https://verify.diadroma.fr/** (GitHub Pages, publication manuelle par le workflow « Publier le vérificateur »). Déposer un fichier de preuve dans l'interface. Ce dépôt reste la **source de référence** : le code est public, et l'outil peut être exécuté en local sans dépendre de ce domaine ; l'ancienne adresse `axel12334556.github.io/diadroma-verify` n'est plus celle à diffuser. Pour un essai local : `python3 -m http.server 8000`, puis ouvrir `http://localhost:8000` et choisir `tests/valid_single.json`. Aucun logiciel propriétaire ni compte Diadroma n'est nécessaire. Le calcul Merkle et le décodage `.ots` ont lieu dans le navigateur ; seuls les identifiants des blocs demandés sont transmis à l'API publique Blockstream.
 
 ## Vérifications réalisées
 
