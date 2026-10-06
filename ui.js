@@ -14,11 +14,17 @@ const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
 const dbomView = document.getElementById('dbomView');
 const disclosureReport = document.getElementById('disclosureReport');
+const reportMeta = document.getElementById('reportMeta');
+const reportActions = document.getElementById('reportActions');
+const reportDownload = document.getElementById('reportDownload');
+const reportPrint = document.getElementById('reportPrint');
 const memoryBox = document.getElementById('memoryBox');
 const memoryText = document.getElementById('memoryText');
 const memoryBtn = document.getElementById('memoryBtn');
 const trustStore = ChainDBoMTrustStore.createTrustStore((() => { try { return window.localStorage; } catch { return { getItem() { throw new Error('indisponible'); }, setItem() { throw new Error('indisponible'); } }; } })());
 let currentV2b = null;
+let currentProofSha256 = null; // SHA-256 of the exact bytes of the dropped proof file (null if it could not be computed)
+let currentReport = null; // the exportable verification report for the last v2b run
 let memorizedFor = null; // client dont l'empreinte vient de la mémoire de cet appareil (null sinon)
 let currentDisclosure = null; // disclosure package dropped by the recipient (never decrypted by this page)
 let cardData = null; // the validated key card object, needed to check the supplier's signature
@@ -136,6 +142,29 @@ async function runDisclosure() {
   if (result.ok) disclosureReport.append(el('p', 'dbom-note', "Pour lire le contenu : déchiffrez le paquet avec votre identité age grâce à l'outil de ChainDBoM (dbom_v2_disclosure open), puis déposez le DBoM en clair dans « DBoM en clair » ci-dessus."));
   disclosureReport.hidden = false;
 }
+function clearReport() { currentReport = null; reportMeta.replaceChildren(); reportActions.hidden = true; }
+// Builds the exportable report. It never receives the DBoM bytes: only whether one was provided.
+function refreshReport(result, options) {
+  clearReport();
+  if (!currentProofSha256) return;
+  try {
+    currentReport = ChainDBoMReport.buildReport({ result, proofDoc: currentV2b, proofSha256: currentProofSha256, generatedAt: new Date(),
+      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(),
+        blockReadFromBlockstream: !!options.fetchBlock, dbomProvided: !!options.dbomBytes } });
+  } catch { return; }
+  const r = currentReport, rows = el('dl', 'dbom-rows');
+  const add = (label, value) => { const item = el('div'); item.append(el('dt', '', label), el('dd', '', value)); rows.append(item); };
+  reportMeta.append(el('h2', '', 'Rapport de vérification'), el('p', 'dbom-note', r.statement), rows);
+  add('Empreinte SHA-256 du fichier de preuve', r.proof.file_sha256);
+  add('Client', r.proof.client_id || 'non lisible'); add('Soumission', r.proof.submission_id || 'non lisible');
+  add('Empreinte de l\'enregistrement', r.proof.record_hash || 'non lisible');
+  add('Établi le', r.generated_at);
+  add('Niveau atteint', r.verdict.level + ' — ' + r.verdict.level_title);
+  add('Clé de signature authentifiée', r.verdict.signing_key_authenticated ? 'oui' : 'non');
+  add('Éléments fournis par le vérifiant', [r.inputs.trusted_fingerprint_provided && 'empreinte de confiance', r.inputs.key_card_provided && 'fiche de clé',
+    r.inputs.block_root_provided && 'racine de bloc', r.inputs.block_read_from_blockstream && 'bloc lu auprès de Blockstream', r.inputs.dbom_provided && 'DBoM en clair (non repris)'].filter(Boolean).join(', ') || 'aucun');
+  reportActions.hidden = false;
+}
 async function runV2b() {
   if (!currentV2b) return;
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
@@ -151,6 +180,7 @@ async function runV2b() {
     const result = await ChainDBoMV2b.verify(currentV2b, options);
     output.hidden = true;
     renderV2b(result);
+    refreshReport(result, options);
     refreshMemory(result);
     renderDbom(result, options.dbomBytes);
     await runDisclosure();
@@ -226,12 +256,13 @@ async function handleFile(file) {
     await runDisclosure();
     return;
   }
-  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null;
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentProofSha256 = null; clearReport();
   if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }
   if (data && data.format === 'chaindbom-anchored-proof-v2b') {
     currentV2b = data;
+    try { currentProofSha256 = await ChainDBoMReport.sha256Hex(new Uint8Array(await file.arrayBuffer())); } catch { currentProofSha256 = null; }
     v2bPanel.hidden = false;
     memorizedFor = null;
     const clientId = proofClientId(data), saved = clientId && trustStore.get(clientId);
@@ -261,6 +292,15 @@ optRoot.addEventListener('input', () => { optFetch.disabled = optRoot.value.trim
 ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('dragover'); }));
 dropzone.addEventListener('drop', event => { if (event.dataTransfer.files.length) handleFile(event.dataTransfer.files[0]); });
+reportDownload.addEventListener('click', () => {
+  if (!currentReport) return;
+  const blob = new Blob([JSON.stringify(currentReport, null, 2) + '\n'], { type: 'application/json' });
+  const url = URL.createObjectURL(blob), link = document.createElement('a');
+  link.href = url; link.download = ChainDBoMReport.reportFileName(currentReport);
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+reportPrint.addEventListener('click', () => { if (currentReport) window.print(); });
 memoryBtn.addEventListener('click', async () => {
   const clientId = proofClientId(currentV2b);
   if (!clientId) return;

@@ -12,6 +12,7 @@
 <script src="verify.js" defer></script>
 <script src="v2b.js" defer></script>
 <script src="v2b-text.js" defer></script>
+<script src="report.js" defer></script>
 <script src="trust-store.js" defer></script>
 <script src="dbom-view.js" defer></script>
 <script src="ui.js" defer></script>
@@ -43,7 +44,13 @@
 <input id="optDbom" type="file" accept=".json,application/json">
 <button id="rerun" type="button">Relancer la vérification</button>
 </section>
+<section id="reportMeta" class="print-only" aria-label="Références du rapport"></section>
 <div id="v2bReport" hidden></div>
+<div id="reportActions" class="report-actions" hidden>
+<button id="reportDownload" type="button">Télécharger le rapport (JSON)</button>
+<button id="reportPrint" type="button">Imprimer ou enregistrer en PDF</button>
+<p class="notice">Le rapport est un compte rendu non signé de cette vérification, sans le contenu du DBoM. Il ne remplace pas le fichier de preuve, dont il indique l'empreinte.</p>
+</div>
 <section id="dbomView" class="dbom" hidden></section>
 <section id="disclosureReport" class="dbom" hidden></section>
 </main>

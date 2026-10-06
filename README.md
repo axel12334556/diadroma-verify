@@ -24,6 +24,15 @@ La preuve confirme le lien cryptographique d'un **hash fourni** avec un bloc sel
 
 C'est un portage indépendant du vérificateur Python de référence (`tests/tools/reference/`). Les deux sont comparés sur des vecteurs 100 % synthétiques et déterministes (`tests/vectors/v2b`, régénérés par `tests/tools/gen_v2b_vectors.py`) : `node tests/v2b.test.cjs`. Aucun réseau n'est utilisé par les tests. Validation réelle : deux preuves produites par ChainDBoM avec des données synthétiques, ancrées dans le bloc Bitcoin 970014 (5 octobre 2026), atteignent `BLOC_CONFIRME` dans ce vérificateur comme dans la version Python (`tests/vectors/real`). Cela valide le fonctionnement sur une vraie chaîne, pas une qualification d'audit. Limites : les entiers JSON au-delà de 2^53 sont refusés ; la signature Ed25519 repose sur WebCrypto (navigateurs récents) ; l'interface web pour ce format n'est pas encore branchée.
 
+## Rapport de vérification exportable
+
+Après la vérification d'une preuve v2b, la page propose deux exports, produits dans le navigateur (rien n'est envoyé) :
+
+- **Rapport JSON** (`rapport-verification-<8 premiers caractères de l'empreinte>.json`, format `diadroma-verification-report-v1`) : niveau atteint, résultat de chaque contrôle avec son libellé, empreinte SHA-256 du fichier de preuve, client, soumission, empreinte de l'enregistrement, date d'établissement, éléments fournis par le vérifiant (empreinte de confiance, fiche de clé, racine de bloc, lecture Blockstream, présence d'un DBoM) et rappel des limites.
+- **Rapport imprimable / PDF** : bouton « Imprimer ou enregistrer en PDF » (impression du navigateur). La mise en page d'impression masque les champs de saisie et le contenu du DBoM.
+
+Ce rapport est un **compte rendu non signé**, pas un certificat : seule la preuve d'origine fait foi (son empreinte figure dans le rapport) et la vérification peut être rejouée. Il ne contient jamais le contenu du DBoM en clair, ni clé, ni jeton. Un rapport est aussi produit pour une preuve invalide (niveau `INVALIDE`), pour documenter le refus. La preuve elle-même n'est proposée que dans son format d'origine, pour qu'il n'existe pas de copie non vérifiable. Les paquets de divulgation ne sont pas repris dans ce rapport (première version). Tests : `node tests/report.test.cjs`.
+
 ## Ligne de commande
 
 La variante pour utilisateurs techniques est décrite dans `cli/README.md`. Elle utilise Python et le paquet `opentimestamps`.
