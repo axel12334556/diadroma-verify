@@ -1,0 +1,41 @@
+{
+  "package": "age-encryption",
+  "version": "0.3.1",
+  "license": "BSD-3-Clause",
+  "built_with_esbuild": "0.27.2",
+  "lockfile_sha256": "11dda8e1294e64f12db7579e4d2cbd912d924e2481765bdabf53226b98d26798",
+  "bundle_sha256": "58013f42cf675730a96388e0a9b0463dfeaacf008636bc351ea26d581b421f76",
+  "bundle_bytes": 310815,
+  "bundled_dependencies": [
+    {
+      "name": "@noble/ciphers",
+      "version": "2.4.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@noble/curves",
+      "version": "2.4.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@noble/hashes",
+      "version": "2.4.0",
+      "license": "MIT"
+    },
+    {
+      "name": "@noble/post-quantum",
+      "version": "0.5.4",
+      "license": "MIT"
+    },
+    {
+      "name": "@scure/base",
+      "version": "2.4.0",
+      "license": "MIT"
+    },
+    {
+      "name": "age-encryption",
+      "version": "0.3.1",
+      "license": "BSD-3-Clause"
+    }
+  ]
+}
