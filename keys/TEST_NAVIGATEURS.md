@@ -20,3 +20,15 @@ Pour chaque navigateur (Safari, Firefox, Chrome), dans une fenêtre privée :
 
 À noter pour chaque navigateur : version, système, et tout comportement inattendu (téléchargement bloqué, message d'erreur, page blanche).
 Résultat attendu à confirmer en particulier : Safari doit gérer Ed25519 et X25519 dans WebCrypto (version récente requise).
+
+## Résultats
+
+| Date | Navigateur | Version | Système | Résultat |
+| --- | --- | --- | --- | --- |
+| 2026-10-06 | Safari | à relever | macOS (version à relever) | parcours complet validé à la main |
+| 2026-10-06 | Firefox | à relever | macOS (version à relever) | parcours complet validé à la main |
+
+Les versions n'ont pas été relevées lors du test : à compléter (menu « À propos de Safari » / « À propos de Firefox »). Le comportement
+de Safari sur Ed25519 et X25519 dépend de sa version, donc la version précise compte pour la documentation destinée aux clients.
+Un test automatique tourne en CI sur Chromium seulement ; refaire ce parcours à la main à chaque changement de l'interface ou de la
+bibliothèque age.
