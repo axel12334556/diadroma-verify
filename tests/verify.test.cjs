@@ -20,7 +20,8 @@ const clone = () => JSON.parse(JSON.stringify(valid));
 (async () => {
   const calls = [];
   const ok = await verify(clone(), mock({}, calls));
-  assert.equal(ok.status, 'success');
+  assert.equal(ok.status, 'unsigned'); // V1: old format = timestamp only, never the green success level
+  assert.match(ok.msg, /sans signature/);
   assert.match(ok.msg, /969034/);
   assert.equal(calls.length, 2);
   assert.ok(calls.every(({ url, options }) => url.startsWith('https://blockstream.info/api/') && options && options.cache === 'no-store'));
@@ -36,12 +37,16 @@ const clone = () => JSON.parse(JSON.stringify(valid));
   assert.equal((await verify(wrongHeight, mock({}, heightCalls))).status, 'error');
   assert.equal(heightCalls.length, 0);
   const noHeight = clone(); delete noHeight.anchor_block_height;
-  assert.equal((await verify(noHeight, mock({}))).status, 'success');
+  assert.equal((await verify(noHeight, mock({}))).status, 'unsigned');
   const altered = clone(); altered.current_hash = altered.current_hash.replace(/^./, c => c === 'a' ? 'b' : 'a');
   assert.equal((await verify(altered, mock({}))).status, 'error');
   const otherRoot = clone(); otherRoot.merkle_root = otherRoot.current_hash = '11'.repeat(32);
   assert.equal((await verify(otherRoot, mock({}))).status, 'error');
   const badPath = clone(); badPath.merkle_proof = [{ sibling: '22'.repeat(32), position: 'up' }];
   assert.equal((await verify(badPath, mock({}))).status, 'error');
-  console.log('Verification: succès uniquement si racine, .ots et en-tête de bloc concordent ; requêtes sans cache OK');
+  // V1: without the user's consent (null), no request is ever made, and the file is not called confirmed.
+  const refused = await verify(clone(), null);
+  assert.equal(refused.status, 'unsupported');
+  assert.match(refused.msg, /cochez/);
+  console.log('Verification: ancien format = horodatage seul (jamais « confirmé »), réseau seulement avec consentement ; concordance uniquement si racine, .ots et en-tête de bloc concordent ; requêtes sans cache OK');
 })().catch(e => { console.error(e); process.exitCode = 1; });

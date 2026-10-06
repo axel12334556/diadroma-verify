@@ -21,6 +21,7 @@
   const BLOCKSTREAM_API = 'https://blockstream.info/api';
   const FETCH_TIMEOUT_MS = 15000;
   const MAX_OTS_BYTES = 1000000, MAX_OTS_NODES = 50000, MAX_OTS_DEPTH = 300;
+  const MAX_OTS_MESSAGE_BYTES = 4096; // the running message of a real proof stays far below this; the hexlify op (0xf3) doubles it at each step
   const LEVELS = ['INVALIDE', 'INTEGRITE', 'ENGAGEMENT_OTS', 'ATTESTATION_BITCOIN', 'BLOC_CONFIRME'];
   const HEX64 = /^[0-9a-f]{64}$/;
   const KEYCARD_FORMAT = 'chaindbom-key-card-v1';
@@ -222,6 +223,7 @@
     async function walk(msg, depth) {
       nodes++;
       if (nodes > MAX_OTS_NODES || depth > MAX_OTS_DEPTH) throw new OtsError('arbre .ots trop grand ou trop profond');
+      if (msg.length > MAX_OTS_MESSAGE_BYTES) throw new OtsError('message intermédiaire .ots trop grand');
       let tag = reader.byte();
       while (tag === 0xff) { await handle(msg, reader.byte(), depth); tag = reader.byte(); }
       await handle(msg, tag, depth);
@@ -492,7 +494,7 @@
         if (declared !== null && !heights.includes(declared)) {
           record('ots_bitcoin_attestation', 'fail', 'hauteur déclarée ' + declared + ' absente de la preuve (hauteurs : ' + heights.join(', ') + ')');
         } else {
-          record('ots_bitcoin_attestation', 'pass', 'attestation(s) Bitcoin aux hauteurs ' + heights.join(', '));
+          record('ots_bitcoin_attestation', 'pass', 'le fichier déclare une attestation Bitcoin aux hauteurs ' + heights.join(', ') + ' (non vérifiée tant que le bloc n\'est pas contrôlé)');
           attestedDigests = bitcoin.filter(a => declared === null || a.height === declared).map(a => a.digest);
         }
       }

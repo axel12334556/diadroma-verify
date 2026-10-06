@@ -19,7 +19,7 @@ const fakeFetch = async url => {
 };
 (async () => {
   const result = await vm.runInContext('verifyProof', ctx)(proof, fakeFetch);
-  assert.equal(result.status, 'success');
+  assert.equal(result.status, 'unsigned');
   assert.match(result.msg, /969034/);
   assert.doesNotMatch(result.msg, /969033/);
   assert.equal(requests.length, 2);

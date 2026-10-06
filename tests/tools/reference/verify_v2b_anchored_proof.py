@@ -41,6 +41,9 @@ Usage :
         [--block-merkle-root HEX | --fetch-block] [--dbom dbom.json]
         [--require integrity|ots|attestation|bitcoin]
 
+Niveaux : seul « bitcoin » (racine du bloc fournie ou lue, et concordante) établit une antériorité. « ots » et
+« attestation » n'attestent que ce que le fichier déclare : un fichier fabriqué hors ligne les obtient aussi.
+
 Codes de sortie : 0 niveau requis atteint ; 1 vérification échouée ou niveau insuffisant ;
 2 fichier ou arguments inutilisables.
 
@@ -71,6 +74,7 @@ BLOCKSTREAM_API = "https://blockstream.info/api"
 MAX_OTS_BYTES = 1_000_000
 MAX_OTS_NODES = 50_000
 MAX_OTS_DEPTH = 300
+MAX_OTS_MESSAGE_BYTES = 4096  # a real proof's running message stays far below; hexlify (0xF3) doubles it at each step
 
 LEVELS = ["INVALIDE", "INTEGRITE", "ENGAGEMENT_OTS", "ATTESTATION_BITCOIN", "BLOC_CONFIRME"]
 REQUIRE_TO_LEVEL = {"integrity": 1, "ots": 2, "attestation": 3, "bitcoin": 4}
@@ -305,6 +309,8 @@ def parse_ots(ots_bytes: bytes) -> dict:
         nodes += 1
         if nodes > MAX_OTS_NODES or depth > MAX_OTS_DEPTH:
             raise OtsError("arbre .ots trop grand ou trop profond")
+        if len(msg) > MAX_OTS_MESSAGE_BYTES:
+            raise OtsError("message intermédiaire .ots trop grand")
         tag = reader.byte()
         while tag == 0xFF:
             handle(msg, reader.byte(), depth)
@@ -459,7 +465,7 @@ def verify(doc, *, trusted_public_key: str | None = None, block_merkle_root: str
                 record("ots_bitcoin_attestation", "fail",
                        f"hauteur déclarée {declared} absente de la preuve (hauteurs : {heights})")
             else:
-                record("ots_bitcoin_attestation", "pass", f"attestation(s) Bitcoin aux hauteurs {heights}")
+                record("ots_bitcoin_attestation", "pass", f"le fichier déclare une attestation Bitcoin aux hauteurs {heights} (non vérifiée tant que le bloc n'est pas contrôlé)")
                 attested_digests = [a["digest"] for a in bitcoin if declared is None or a["height"] == declared]
     if ots is None:
         record("ots_bitcoin_attestation", "skipped", "preuve .ots illisible")
@@ -539,7 +545,9 @@ def main(argv=None) -> int:
     group.add_argument("--fetch-block", action="store_true", help="interroger blockstream.info (réseau)")
     parser.add_argument("--dbom", help="DBoM clair fourni par le client (optionnel)")
     parser.add_argument("--require", choices=sorted(REQUIRE_TO_LEVEL), default="integrity",
-                        help="niveau minimal exigé pour le code de sortie 0 (défaut : integrity)")
+                        help="niveau minimal exigé pour le code de sortie 0 (défaut : integrity). "
+                             "ATTENTION : seul « bitcoin » (bloc contrôlé) vaut antériorité ; « ots » et « attestation » "
+                             "reposent sur des déclarations du fichier, qu'un fichier fabriqué hors ligne satisfait aussi")
     args = parser.parse_args(argv)
 
     try:

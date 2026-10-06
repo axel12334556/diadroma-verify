@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-9HGND/wzs/7daFm3VreiUeTAVyfW8NF88gDN9ZWUdRk=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-1UqFTTJckzmq3T7+ZAVwdFRNJ7N56XKroxgvReHq600=' 'sha256-ysVvhmptOzFnwmVDTJ2RnzZnFj5vx28/hiw77tAbbh4=' 'sha256-JcShOSMIrK1dZZkJyOwAnOQj7GVwgdbXE8Na2ubGsPA='; style-src 'sha256-5LMj7fCCNLOZxSjoIBcRlwHUPXX3aWR0FmZGKt2G2VY='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-RT/6MwuhTsnVo6vHbkd9qU2iytPlpsHpsSBF9ssAOeA=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-1UqFTTJckzmq3T7+ZAVwdFRNJ7N56XKroxgvReHq600=' 'sha256-ysVvhmptOzFnwmVDTJ2RnzZnFj5vx28/hiw77tAbbh4=' 'sha256-JcShOSMIrK1dZZkJyOwAnOQj7GVwgdbXE8Na2ubGsPA='; style-src 'sha256-E3E2MzA89vgXdZnUKyUKzxK7dH/BNj62MiHWRSYxrRg='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Diadroma — Mes clés</title>
 <style>
@@ -95,7 +95,7 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 #result:not([hidden])::before, .banner::before { content: ""; position: absolute; left: 1.25rem; top: 1.35rem; width: 16px; height: 16px; border-radius: 50%; background: var(--fond); border: 3px solid var(--texte-doux); }
 #result.success::before, .banner.success::before { background: var(--menthe); border-color: var(--menthe); }
 #result.error::before, .banner.error::before { background: var(--erreur); border-color: var(--erreur); }
-#result.pending::before, .banner.pending::before, #result.unsupported::before, .banner.unsupported::before { background: var(--fond); border-color: var(--ambre); }
+#result.pending::before, .banner.pending::before, #result.unsupported::before, .banner.unsupported::before, #result.unsigned::before { background: var(--fond); border-color: var(--ambre); }
 .banner strong { font-family: var(--police-titre); font-size: 1.1rem; letter-spacing: -.015em; }
 .banner p { margin: .35rem 0 0; color: var(--texte-doux); }
 
@@ -8229,6 +8229,7 @@ ul.checklist li { padding: .3rem 0; }
   const BLOCKSTREAM_API = 'https://blockstream.info/api';
   const FETCH_TIMEOUT_MS = 15000;
   const MAX_OTS_BYTES = 1000000, MAX_OTS_NODES = 50000, MAX_OTS_DEPTH = 300;
+  const MAX_OTS_MESSAGE_BYTES = 4096; // the running message of a real proof stays far below this; the hexlify op (0xf3) doubles it at each step
   const LEVELS = ['INVALIDE', 'INTEGRITE', 'ENGAGEMENT_OTS', 'ATTESTATION_BITCOIN', 'BLOC_CONFIRME'];
   const HEX64 = /^[0-9a-f]{64}$/;
   const KEYCARD_FORMAT = 'chaindbom-key-card-v1';
@@ -8430,6 +8431,7 @@ ul.checklist li { padding: .3rem 0; }
     async function walk(msg, depth) {
       nodes++;
       if (nodes > MAX_OTS_NODES || depth > MAX_OTS_DEPTH) throw new OtsError('arbre .ots trop grand ou trop profond');
+      if (msg.length > MAX_OTS_MESSAGE_BYTES) throw new OtsError('message intermédiaire .ots trop grand');
       let tag = reader.byte();
       while (tag === 0xff) { await handle(msg, reader.byte(), depth); tag = reader.byte(); }
       await handle(msg, tag, depth);
@@ -8700,7 +8702,7 @@ ul.checklist li { padding: .3rem 0; }
         if (declared !== null && !heights.includes(declared)) {
           record('ots_bitcoin_attestation', 'fail', 'hauteur déclarée ' + declared + ' absente de la preuve (hauteurs : ' + heights.join(', ') + ')');
         } else {
-          record('ots_bitcoin_attestation', 'pass', 'attestation(s) Bitcoin aux hauteurs ' + heights.join(', '));
+          record('ots_bitcoin_attestation', 'pass', 'le fichier déclare une attestation Bitcoin aux hauteurs ' + heights.join(', ') + ' (non vérifiée tant que le bloc n\'est pas contrôlé)');
           attestedDigests = bitcoin.filter(a => declared === null || a.height === declared).map(a => a.digest);
         }
       }
