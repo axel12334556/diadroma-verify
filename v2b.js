@@ -60,6 +60,18 @@
     new DataView(out.buffer).setBigUint64(0, BigInt(n));
     return out;
   };
+  // V7: the eight points of small order of Ed25519 (and their non-canonical encodings) accept forged signatures for
+  // any message; they are refused everywhere a public key is read. Only the y coordinate matters (sign bit ignored).
+  const ED25519_P = (1n << 255n) - 19n;
+  const leInt = bytes => bytes.reduceRight((acc, b) => (acc << 8n) | BigInt(b), 0n);
+  const WEAK_Y = new Set([0n, 1n, ED25519_P - 1n,
+    leInt(Uint8Array.from(hexToArray('c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a'))),
+    leInt(Uint8Array.from(hexToArray('26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05')))]);
+  function hexToArray(text) { return text.match(/../g).map(pair => parseInt(pair, 16)); }
+  function hasSmallOrder(publicKey) {
+    const copy = Uint8Array.from(publicKey); copy[31] &= 0x7f;
+    return WEAK_Y.has(leInt(copy) % ED25519_P);
+  }
   const isObject = v => typeof v === 'object' && v !== null && !Array.isArray(v);
   const isInt = (v, min) => typeof v === 'number' && Number.isSafeInteger(v) && v >= min;
   function exactKeys(obj, keys, name) {
@@ -68,6 +80,28 @@
       throw new FormatError(name + ' : clés attendues exactement ' + JSON.stringify(keys.slice().sort()));
     }
     return obj;
+  }
+
+  // V8: JSON.parse reads 80.0 as the integer 80, the Python reference refuses it. The text of the file is therefore
+  // checked before parsing: an integer written with a fraction or an exponent (80.0, 8e1) or as "-0" is refused.
+  function checkNumberLiterals(text) {
+    let i = 0;
+    const n = text.length;
+    while (i < n) {
+      const c = text[i];
+      if (c === '"') { i++; while (i < n && text[i] !== '"') i += text[i] === '\\' ? 2 : 1; i++; continue; }
+      if (c === '-' || (c >= '0' && c <= '9')) {
+        let j = i + 1;
+        while (j < n && /[0-9.eE+-]/.test(text[j])) j++;
+        const token = text.slice(i, j);
+        // 80.0, 8e1 or -0: an integer written like a decimal. JavaScript reads it as the integer, Python as a float.
+        if (!/^(0|-?[1-9][0-9]*)$/.test(token) && (token === '-0' || Number.isInteger(Number(token)))) {
+          throw new FormatError('entier écrit comme un décimal dans le fichier : ' + token.slice(0, 20));
+        }
+        i = j; continue;
+      }
+      i++;
+    }
   }
 
   // ------------------------------------------------------------------ RFC 8785 (JCS)
@@ -104,6 +138,7 @@
     const signature = fromHex(submission.signature_hex, 'signature');
     const publicKey = fromHex(submission.signing_public_key_hex, 'clé publique');
     if (signature.length !== 64 || publicKey.length !== 32) throw new FormatError('signature (64 octets) ou clé publique (32 octets) de mauvaise taille');
+    if (hasSmallOrder(publicKey)) throw new FormatError("clé publique d'ordre faible refusée");
     hex64(link.record_hash, 'link.record_hash');
     hex64(link.link_hash, 'link.link_hash');
     if (link.previous_link_hash !== null) hex64(link.previous_link_hash, 'link.previous_link_hash');
@@ -295,6 +330,7 @@
     if (!AGE_RECIPIENT_RE.test(card.age_recipient)) throw new FormatError('destinataire age invalide');
     if (!TIMESTAMP_RE.test(card.created_at)) throw new FormatError('created_at doit être en UTC, par exemple 2026-10-05T12:00:00Z');
     const publicKey = fromHex(card.signing_public_key_hex, 'signing_public_key_hex');
+    if (hasSmallOrder(publicKey)) throw new FormatError("clé publique d'ordre faible refusée");
     if (hex(await sha256(publicKey)) !== card.signing_key_fingerprint_sha256) throw new FormatError("l'empreinte ne correspond pas à la clé publique");
     const unsigned = {};
     for (const key of KEYCARD_KEYS) if (key !== 'signature_hex') unsigned[key] = card[key];
@@ -552,5 +588,5 @@
       signing_key_authenticated: status.signing_key_trust === 'pass', dbom_checked: status.record_hash_vs_dbom === 'pass' };
   }
 
-  root.ChainDBoMV2b = { verify, checkKeyCard, checkDisclosure, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
+  root.ChainDBoMV2b = { checkNumberLiterals, hasSmallOrder, verify, checkKeyCard, checkDisclosure, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -27,13 +27,26 @@ const NOW = new Date('2026-10-06T09:00:00Z');
   assert.equal(report.format, 'diadroma-verification-report-v1');
   assert.equal(report.generated_at, '2026-10-06T09:00:00.000Z');
   assert.equal(report.verdict.level, result.level);
-  assert.equal(report.verdict.level_title, T.LEVEL_TEXT[result.level].title);
+  assert.equal(report.verdict.level_title, T.levelText(result.level, result.signing_key_authenticated).title);
   assert.equal(report.proof.file_sha256, sha);
   assert.match(report.proof.client_id, /^[0-9a-f-]{36}$/);
   assert.deepEqual(Object.keys(report.proof), ['format', 'file_sha256', 'client_id', 'submission_id', 'record_hash', 'batch_number']);
   assert.equal(report.checks.length, result.checks.length);
   for (const c of report.checks) { assert.ok(c.label && c.status_text && typeof c.detail === 'string'); assert.notEqual(c.label, c.id); }
-  assert.deepEqual(report.inputs, { trusted_fingerprint_provided: true, key_card_provided: false, block_root_provided: true, block_read_from_blockstream: false, dbom_provided: true });
+  assert.deepEqual(report.inputs, { trusted_fingerprint_provided: true, trusted_fingerprint: null, trusted_fingerprint_source: null, key_card_provided: false, block_root_provided: true, block_read_from_blockstream: false, dbom_provided: true });
+  // V9: the report names the fingerprint that was used and where it came from; an invalid value or origin is dropped.
+  const FP = 'ab'.repeat(32);
+  for (const source of ['typed', 'key_card', 'device_memory']) {
+    const r = plain(R.buildReport({ result, proofDoc: doc, proofSha256: sha, generatedAt: NOW, inputs: { trustedFingerprint: FP, trustedFingerprintSource: source } }));
+    assert.equal(r.inputs.trusted_fingerprint, FP); assert.equal(r.inputs.trusted_fingerprint_source, source);
+  }
+  const odd = plain(R.buildReport({ result, proofDoc: doc, proofSha256: sha, generatedAt: NOW, inputs: { trustedFingerprint: 'not hex', trustedFingerprintSource: 'typed' } }));
+  assert.equal(odd.inputs.trusted_fingerprint, null); assert.equal(odd.inputs.trusted_fingerprint_source, null);
+  const noSource = plain(R.buildReport({ result, proofDoc: doc, proofSha256: sha, generatedAt: NOW, inputs: { trustedFingerprint: FP, trustedFingerprintSource: 'elsewhere' } }));
+  assert.equal(noSource.inputs.trusted_fingerprint_source, null);
+  // V4: the report carries the same orange title as the page when the key is not authenticated.
+  const confirmed = { ...result, level: 'BLOC_CONFIRME', signing_key_authenticated: false };
+  assert.match(plain(R.buildReport({ result: confirmed, proofDoc: doc, proofSha256: sha, generatedAt: NOW, inputs: {} })).verdict.level_title, /auteur non authentifié/);
   assert.match(report.statement, /non signé/);
   assert.match(report.statement, /n'est pas un certificat/);
   assert.equal(R.reportFileName(report), 'rapport-verification-' + sha.slice(0, 8) + '.json');

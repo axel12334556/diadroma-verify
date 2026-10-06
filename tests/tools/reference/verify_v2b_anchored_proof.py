@@ -92,6 +92,21 @@ class OtsError(ValueError):
 
 # --------------------------------------------------------------------------- helpers
 
+# The eight points of small order of Ed25519 (and their non-canonical encodings) validate forged signatures for any
+# message. Only the y coordinate matters (the sign bit is ignored): 0, 1, -1 and the two order-8 values.
+_P = 2**255 - 19
+_WEAK_Y = frozenset({
+    0, 1, _P - 1,
+    int.from_bytes(bytes.fromhex("c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a"), "little") & (2**255 - 1),
+    int.from_bytes(bytes.fromhex("26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05"), "little") & (2**255 - 1),
+})
+
+
+def has_small_order(public_key: bytes) -> bool:
+    return (int.from_bytes(public_key, "little") & (2**255 - 1)) % _P in _WEAK_Y
+
+
+
 def _sha256(data: bytes) -> bytes:
     return hashlib.sha256(data).digest()
 
@@ -102,9 +117,14 @@ def _hex64(value, name: str) -> bytes:
     return bytes.fromhex(value)
 
 
+MAX_SAFE_INTEGER = 2**53 - 1  # same bound as the JavaScript verifier (Number.MAX_SAFE_INTEGER)
+
+
 def _uint(value, name: str, minimum: int = 0) -> int:
     if type(value) is not int or value < minimum:
         raise ProofFormatError(f"{name} doit être un entier >= {minimum}")
+    if value > MAX_SAFE_INTEGER:
+        raise ProofFormatError(f"{name} dépasse 2^53 - 1")
     return value
 
 
@@ -150,6 +170,8 @@ def parse_document(doc) -> dict:
         raise ProofFormatError("signature ou clé publique non hexadécimale") from exc
     if len(signature) != 64 or len(public_key) != 32:
         raise ProofFormatError("signature (64 octets) ou clé publique (32 octets) de mauvaise taille")
+    if has_small_order(public_key):
+        raise ProofFormatError("clé publique d'ordre faible refusée")
 
     _hex64(link["record_hash"], "link.record_hash")
     _hex64(link["link_hash"], "link.link_hash")
@@ -175,6 +197,8 @@ def parse_document(doc) -> dict:
     proof = anchor["merkle_proof"]
     if not isinstance(proof, list):
         raise ProofFormatError("anchor.merkle_proof doit être une liste")
+    if len(proof) > 64:
+        raise ProofFormatError("anchor.merkle_proof trop longue")
     for step in proof:
         _exact_keys(step, {"sibling", "position"}, "étape de preuve Merkle")
         _hex64(step["sibling"], "sibling")

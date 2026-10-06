@@ -23,6 +23,8 @@ class HeightTests(unittest.TestCase):
         self.assertTrue(result['on_chain_confirmed'])
         self.assertIn('969034', result['conclusion'])
         self.assertNotIn('969033', result['conclusion'])
+        self.assertIn('sans signature', result['conclusion'])  # V1: a timestamp only, never presented as a confirmed proof
+        self.assertNotIn('Preuve confirmée', result['conclusion'])
 
     def test_no_matching_attestation(self):
         other = dict(proof, anchor_block_height=969035)

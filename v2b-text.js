@@ -14,6 +14,13 @@
     BLOC_CONFIRME: { title: 'Preuve confirmée par un bloc Bitcoin', cls: 'success',
       text: "Cette empreinte existait au plus tard au moment du bloc Bitcoin indiqué, d'après la racine de bloc fournie ou lue." },
   };
+  // V4: the green level needs an authenticated signing key. A confirmed block with an unknown author only proves that
+  // SOMEONE's file existed by then (anyone can sign a manifest carrying a real client_id and timestamp it themselves).
+  const UNAUTHENTICATED_BLOC = { title: 'Antériorité confirmée, auteur non authentifié', cls: 'unsupported',
+    text: "Cette empreinte existait au plus tard au moment du bloc Bitcoin indiqué, mais rien n'établit qui l'a signée : sans l'empreinte de confiance obtenue auprès du client (sa fiche de clé), un tiers a pu fabriquer ce fichier avec sa propre clé. Ne l'attribuez pas au client." };
+  function levelText(level, keyAuthenticated) {
+    return level === 'BLOC_CONFIRME' && !keyAuthenticated ? UNAUTHENTICATED_BLOC : LEVEL_TEXT[level];
+  }
   const CHECK_LABELS = {
     format: 'Structure du fichier',
     manifest_signature: 'Signature Ed25519 du manifeste',
@@ -29,5 +36,5 @@
   };
   const STATUS_TEXT = { pass: 'Réussi', fail: 'Échec', skipped: 'Non vérifié' };
   const STATUS_MARK = { pass: '✔', fail: '✖', skipped: '–' };
-  root.ChainDBoMV2bText = { LEVEL_TEXT, CHECK_LABELS, STATUS_TEXT, STATUS_MARK };
+  root.ChainDBoMV2bText = { LEVEL_TEXT, levelText, CHECK_LABELS, STATUS_TEXT, STATUS_MARK };
 })(typeof globalThis !== 'undefined' ? globalThis : this);
