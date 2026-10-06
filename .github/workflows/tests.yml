@@ -22,10 +22,11 @@ jobs:
           python-version: '3.11'
       - name: Installer age (contrôles croisés de la création de clés)
         run: sudo apt-get update && sudo apt-get install -y age
-      - name: Création de clés (module pur, contrôles croisés avec age, sans réseau)
+      - name: Création et sauvegarde de clés (modules purs, contrôles croisés avec age, tar et l'outil Python, sans réseau)
         run: |
           REQUIRE_AGE=1 node tests/keys-core.test.cjs
           REQUIRE_AGE=1 node tests/age-vendor.test.cjs
+          REQUIRE_AGE=1 node tests/keys-backup.test.cjs
       - name: Tests JavaScript sans réseau
         run: |
           node tests/merkle.test.cjs
