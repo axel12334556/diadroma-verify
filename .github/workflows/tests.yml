@@ -20,6 +20,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Installer age (contrôles croisés de la création de clés)
+        run: sudo apt-get update && sudo apt-get install -y age
+      - name: Création de clés (module pur, contrôles croisés avec age, sans réseau)
+        run: REQUIRE_AGE=1 node tests/keys-core.test.cjs
       - name: Tests JavaScript sans réseau
         run: |
           node tests/merkle.test.cjs
