@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-9HGND/wzs/7daFm3VreiUeTAVyfW8NF88gDN9ZWUdRk=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-1UqFTTJckzmq3T7+ZAVwdFRNJ7N56XKroxgvReHq600=' 'sha256-ysVvhmptOzFnwmVDTJ2RnzZnFj5vx28/hiw77tAbbh4=' 'sha256-L7ZRdJte5qz/04A1QUrybw756GZKl90N6myPfst+Nlw='; style-src 'sha256-Wc47GdIK2TuUYsTmiGv6Rcuq0xURmzApRt4O9OxlTZg='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-9HGND/wzs/7daFm3VreiUeTAVyfW8NF88gDN9ZWUdRk=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-1UqFTTJckzmq3T7+ZAVwdFRNJ7N56XKroxgvReHq600=' 'sha256-ysVvhmptOzFnwmVDTJ2RnzZnFj5vx28/hiw77tAbbh4=' 'sha256-JcShOSMIrK1dZZkJyOwAnOQj7GVwgdbXE8Na2ubGsPA='; style-src 'sha256-5LMj7fCCNLOZxSjoIBcRlwHUPXX3aWR0FmZGKt2G2VY='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Diadroma — Mes clés</title>
 <style>
@@ -49,72 +49,203 @@
   }
 }
 
-/* Outil de clés : mise en page propre à cet outil (les couleurs viennent de la charte Diadroma, style/tokens.css). */
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+body { position: relative; margin: 0; font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.5; -webkit-font-smoothing: antialiased; }
+a { color: var(--lien); text-decoration: none; }
+a:hover { text-decoration: underline; }
 :focus-visible { outline: 3px solid var(--menthe); outline-offset: 3px; border-radius: 6px; }
-header.top { border-bottom: 1px solid var(--trait); background: var(--nav-fond); }
-header.top .wrap { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-.brand { font-family: var(--police-titre); font-weight: 600; font-size: 1.05rem; }
-.tagline { color: var(--texte-doux); font-size: .82rem; }
-main { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
-h1, h2 { font-family: var(--police-titre); letter-spacing: -.02em; line-height: 1.15; }
-h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); margin: 0 0 1rem; }
-h2 { font-size: 1.2rem; margin: 1.8rem 0 .5rem; }
+h1, h2 { font-family: var(--police-titre); font-weight: 700; letter-spacing: -.025em; line-height: 1.1; text-wrap: balance; }
+code { font-family: var(--police-mono); font-size: .9em; }
+
+/* Navigation */
+.top { position: sticky; top: 0; z-index: 10; background: var(--nav-fond); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--trait); }
+.top .wrap { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 52px; }
+.brand { display: inline-flex; align-items: center; gap: .55rem; color: var(--texte); font-family: var(--police-titre); font-weight: 600; font-size: 1.05rem; letter-spacing: -.01em; }
+.brand:hover { text-decoration: none; }
+.brand img { width: 28px; height: 28px; display: block; }
+.top nav a { color: var(--texte-doux); font-size: .82rem; }
+.top nav a:hover { color: var(--texte); text-decoration: none; }
+
+.container { max-width: 760px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+h1 { font-size: clamp(2.2rem, 7vw, 3.25rem); margin: 0 0 1rem; }
+h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
+.container > p { color: var(--texte-doux); font-size: 1.05rem; max-width: 38rem; }
+
+/* Tracés d'itinéraire en fond, sur les côtés des grands écrans (comme sur le site) */
+.fond { position: absolute; top: 52px; left: 0; right: 0; height: 520px; overflow: hidden; pointer-events: none; display: none; }
+.chemin { position: absolute; top: 2rem; width: min(24vw, 340px); height: auto; }
+.chemin-g { left: 0; }
+.chemin-d { right: 0; }
+.chemin path { fill: none; stroke: var(--trait); stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; }
+.chemin .station { fill: var(--fond); stroke: var(--trait); stroke-width: 6; }
+.chemin .arrivee { fill: var(--menthe); stroke: none; }
+@media (min-width: 1000px) { .fond { display: block; } }
+.container { position: relative; }
+
+/* Dépôt du fichier */
+.dropzone { display: block; margin: 2rem 0; padding: 3rem 1.5rem; text-align: center; font-size: 1.1rem; letter-spacing: -.01em; background: var(--fond-2); border: 2px dashed var(--trait); border-radius: var(--rayon); cursor: pointer; transition: border-color .2s, transform .25s cubic-bezier(.2,.8,.2,1), background-color .25s; }
+.dropzone span { display: block; margin-top: .3rem; font-size: .9rem; color: var(--texte-doux); }
+.dropzone:hover, .dropzone.dragover, .dropzone:focus-within { border-color: var(--menthe); transform: translateY(-2px); }
+.dropzone.dragover { transform: scale(1.015); background: color-mix(in srgb, var(--menthe) 8%, var(--fond-2)); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Messages : une station colorée devant le texte */
+#result:not([hidden]), .banner { position: relative; margin: 1.25rem 0; padding: 1.1rem 1.25rem 1.1rem 3.1rem; background: var(--fond-2); border-radius: var(--rayon); }
+#result:not([hidden])::before, .banner::before { content: ""; position: absolute; left: 1.25rem; top: 1.35rem; width: 16px; height: 16px; border-radius: 50%; background: var(--fond); border: 3px solid var(--texte-doux); }
+#result.success::before, .banner.success::before { background: var(--menthe); border-color: var(--menthe); }
+#result.error::before, .banner.error::before { background: var(--erreur); border-color: var(--erreur); }
+#result.pending::before, .banner.pending::before, #result.unsupported::before, .banner.unsupported::before { background: var(--fond); border-color: var(--ambre); }
+.banner strong { font-family: var(--police-titre); font-size: 1.1rem; letter-spacing: -.015em; }
+.banner p { margin: .35rem 0 0; color: var(--texte-doux); }
+
+/* Contrôles complémentaires */
+.options { margin: 2rem 0; padding: 1.5rem 1.5rem 1.75rem; background: var(--fond-2); border-radius: var(--rayon); }
+.options h2 { margin-top: 0; }
+.options label { display: block; margin-top: 1.1rem; font-size: .92rem; }
+.options input[type=text] { display: block; width: 100%; margin-top: .4rem; padding: .65rem .8rem; font: inherit; font-family: var(--police-mono); font-size: .85rem; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 12px; }
+.options input[type=file] { display: block; margin-top: .4rem; max-width: 100%; color: var(--texte-doux); }
+.options .check-option { display: flex; gap: .6rem; align-items: flex-start; color: var(--texte-doux); }
+/* Boutons : pastilles marine, léger relief au survol, enfoncement au clic */
+.options button, #memoryBtn { margin-top: 1.25rem; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background-color .18s; }
+.options button:hover, #memoryBtn:hover { background: var(--marine-survol); transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--marine) 55%, transparent); }
+.options button:active, #memoryBtn:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.options input[type=file]::file-selector-button { margin-right: .75rem; padding: .45rem 1.05rem; font: inherit; font-size: .88rem; font-weight: 500; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 980px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), border-color .18s, box-shadow .18s; }
+.options input[type=file]::file-selector-button:hover { border-color: var(--menthe); transform: translateY(-2px); box-shadow: 0 8px 18px -10px var(--menthe); }
+.options input[type=file]::file-selector-button:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.options input[type=text] { transition: border-color .18s, box-shadow .18s; }
+.options input[type=text]:focus { outline: none; border-color: var(--menthe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--menthe) 25%, transparent); }
+.notice { margin: .8rem 0 0; padding: .8rem 1rem; background: var(--fond); border-radius: 12px; font-size: .9rem; color: var(--texte-doux); }
+.notice p { margin: 0; }
+#memoryBtn { margin-top: .7rem; padding: .45rem 1.1rem; font-size: .88rem; }
+
+/* Contrôles : un itinéraire d'étapes */
+.checks { list-style: none; margin: 1.5rem 0; padding: 0; }
+.check { display: grid; grid-template-columns: 1.6rem 1fr auto; gap: .1rem .7rem; padding: .85rem 0; border-bottom: 1px solid var(--trait); }
+.check .mark { font-weight: 700; }
+.check .label { letter-spacing: -.01em; }
+.check .state { font-size: .82rem; font-weight: 600; }
+.check .detail { grid-column: 2 / 4; font-size: .85rem; color: var(--texte-doux); overflow-wrap: anywhere; }
+.check.pass .mark, .check.pass .state { color: var(--menthe-texte); }
+.check.fail .mark, .check.fail .state { color: var(--erreur-texte); }
+.check.skipped .mark, .check.skipped .state { color: var(--ambre-texte); }
+.limits { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--trait); font-size: .92rem; color: var(--texte-doux); }
+.limits h2 { color: var(--texte); font-size: 1.1rem; }
+
+/* Contenu du DBoM en clair, affiché seulement s'il correspond à la preuve */
+.dbom { margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--trait); }
+.dbom h2 { margin-top: 0; }
+.dbom h3 { font-family: var(--police-titre); font-size: 1.05rem; letter-spacing: -.01em; margin: 1.75rem 0 .5rem; }
+.dbom-note { color: var(--texte-doux); font-size: .92rem; margin: .4rem 0; }
+.dbom-rows { margin: 0; }
+.dbom-rows > div { display: grid; grid-template-columns: minmax(8rem, 14rem) 1fr; gap: .25rem 1rem; padding: .55rem 0; border-bottom: 1px solid var(--trait); }
+.dbom-rows dt { color: var(--texte-doux); font-size: .9rem; }
+.dbom-rows dd { margin: 0; overflow-wrap: anywhere; }
+.dbom-scroll { overflow-x: auto; }
+.dbom table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.dbom th { text-align: left; font-weight: 600; color: var(--texte-doux); font-size: .82rem; padding: .5rem .75rem .5rem 0; border-bottom: 1px solid var(--trait); white-space: nowrap; }
+.dbom td { padding: .6rem .75rem .6rem 0; border-bottom: 1px solid var(--trait); vertical-align: top; }
+@media (max-width: 560px) { .dbom-rows > div { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; animation: none !important; } .options button:hover, #memoryBtn:hover, .dropzone:hover, .options input[type=file]::file-selector-button:hover { transform: none; } }
+
+/* Rapport exportable : boutons à l'écran, mise en page propre à l'impression (sans le contenu du DBoM) */
+.print-only { display: none; }
+.report-actions { margin: 1.5rem 0; }
+.report-actions button { margin: 0 .75rem .5rem 0; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; }
+.report-actions button:hover { background: var(--marine-survol); }
+@media print {
+  .fond, .top, .dropzone, #result, #v2bOptions, #dbomView, #disclosureReport, #reportActions { display: none !important; }
+  .print-only { display: block; }
+  body { background: #fff; color: #000; }
+  .check, .banner, .limits { break-inside: avoid; }
+  .dbom-rows dd { overflow-wrap: anywhere; }
+}
+
+/* Outil de clés : ajouts propres à cet outil. Le style de base (tokens, navigation, tracés de fond, messages « station », cartes
+ * grises, boutons pastille) vient de style/tokens.css et style/style.css, les mêmes que le vérificateur : cette feuille n'en
+ * redéfinit rien d'autre que ce qui manque à des écrans à formulaires. */
 h1:focus { outline: none; }
-p { max-width: 40rem; }
+.top nav { color: var(--texte-doux); font-size: .82rem; }
+.brand .logo { width: 28px; height: 28px; display: block; }
+.notes { padding-bottom: 0; }
+.notes + .container { padding-top: 1.5rem; }
+.foot { padding-top: 1.5rem; padding-bottom: 3rem; border-top: 1px solid var(--trait); color: var(--texte-doux); font-size: .85rem; }
+.foot p { margin: 0 0 .5rem; font-size: .85rem; }
 .muted { color: var(--texte-doux); font-size: .92rem; }
-.notice { border: 1px solid var(--trait); border-left-width: 5px; border-radius: 12px; padding: .8rem 1rem; margin: 1rem 0; background: var(--fond-2); }
-.notice.warn { border-left-color: var(--ambre); }
-.notice.err { border-left-color: var(--erreur); color: var(--erreur-texte); }
-.notice.ok { border-left-color: var(--menthe); }
-.notice strong { display: block; }
-.choices { display: grid; gap: .9rem; margin: 1.2rem 0; }
-.choice { text-align: left; width: 100%; padding: 1rem 1.2rem; border: 1px solid var(--trait); border-radius: 16px; background: var(--fond-2); color: var(--texte); font: inherit; cursor: pointer; }
-.choice:hover { border-color: var(--marine); }
-.choice b { display: block; font-size: 1.1rem; margin-bottom: .15rem; }
-.choice span { color: var(--texte-doux); font-size: .92rem; }
-button.primary, a.button { display: inline-block; padding: .7rem 1.3rem; border-radius: 999px; border: 0; background: var(--marine); color: var(--fond); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
-button.primary:hover { background: var(--marine-survol); }
-button.primary[disabled] { opacity: .45; cursor: not-allowed; }
-button.link { background: none; border: 0; padding: 0; color: var(--lien); font: inherit; cursor: pointer; text-decoration: underline; }
-.row { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; margin: 1rem 0; }
-label { display: block; font-weight: 600; margin: 1rem 0 .25rem; }
-label.inline { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; }
-input[type=text], input[type=password], input[type=file] { width: 100%; max-width: 32rem; padding: .6rem .8rem; border: 1px solid var(--trait); border-radius: 10px; font: inherit; background: var(--fond); color: var(--texte); }
-input[type=checkbox] { margin-top: .3rem; width: 1.1rem; height: 1.1rem; }
-.help { color: var(--texte-doux); font-size: .88rem; margin: .2rem 0 0; }
-.error-text { color: var(--erreur-texte); font-size: .92rem; margin: .3rem 0 0; }
-ol.steps { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0 0 1.2rem; }
-ol.steps li { padding: .25rem .8rem; border-radius: 999px; border: 1px solid var(--trait); color: var(--texte-doux); font-size: .85rem; }
-ol.steps li.current { background: var(--marine); color: var(--fond); border-color: var(--marine); }
-ol.steps li.done { border-color: var(--menthe); color: var(--menthe-texte); }
-.phrase { font-family: var(--police-mono); font-size: 1.15rem; padding: 1rem; border: 2px dashed var(--ambre); border-radius: 12px; background: var(--fond-2); word-break: break-word; user-select: all; }
-dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; margin: 1rem 0; }
-dl.facts dt { color: var(--texte-doux); }
-dl.facts dd { margin: 0; font-family: var(--police-mono); font-size: .85rem; word-break: break-all; }
-ul.checklist { padding-left: 1.2rem; }
-.sheet { border: 1px solid var(--trait); border-radius: 12px; padding: 1rem 1.2rem; margin: 1rem 0; }
-footer { max-width: 760px; margin: 0 auto; padding: 1rem 1.5rem 3rem; color: var(--texte-doux); font-size: .85rem; border-top: 1px solid var(--trait); }
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-[hidden] { display: none !important; }
-@media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; } }
-/* Impression : seule la fiche de récapitulatif, jamais un secret. */
+.help { color: var(--texte-doux); font-size: .88rem; margin: .3rem 0 0; }
+.row { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; margin: 1.25rem 0 0; }
+.row .primary, .row button { margin-top: 0; }
+
+/* Écran d'accueil : trois grandes cartes cliquables, comme la zone de dépôt du vérificateur */
+.choices { display: grid; gap: 1rem; margin: 1.75rem 0; }
+.choice { display: block; width: 100%; text-align: left; padding: 1.4rem 1.5rem; font: inherit; color: var(--texte); background: var(--fond-2); border: 2px solid transparent; border-radius: var(--rayon); cursor: pointer; transition: border-color .18s, transform .18s cubic-bezier(.2,.8,.2,1); }
+.choice b { display: block; font-family: var(--police-titre); font-size: 1.15rem; letter-spacing: -.015em; }
+.choice span { display: block; margin-top: .2rem; font-size: .92rem; color: var(--texte-doux); }
+.choice:hover, .choice:focus-visible { border-color: var(--menthe); transform: translateY(-2px); }
+
+/* Formulaires : les champs du vérificateur, étendus aux mots de passe et aux cases à cocher */
+.options input[type=password] { display: block; width: 100%; margin-top: .4rem; padding: .65rem .8rem; font: inherit; font-family: var(--police-mono); font-size: .85rem; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 12px; transition: border-color .18s, box-shadow .18s; }
+.options input[type=password]:focus { outline: none; border-color: var(--menthe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--menthe) 25%, transparent); }
+.options label.inline { display: flex; gap: .6rem; align-items: flex-start; color: var(--texte-doux); }
+.options input[type=checkbox] { margin-top: .25rem; flex: none; }
+.options > form > p { color: var(--texte-doux); max-width: none; font-size: .95rem; }
+.options button.link, button.link { margin: 0; padding: 0; font: inherit; font-size: .92rem; color: var(--lien); background: none; border: 0; border-radius: 0; text-decoration: underline; cursor: pointer; box-shadow: none; transform: none; }
+.options button.link:hover, button.link:hover { background: none; box-shadow: none; transform: none; text-decoration: none; }
+.options button[disabled], button.primary[disabled] { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+button.primary { margin-top: 1.25rem; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background .18s; }
+button.primary:hover { background: var(--marine-survol); transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--marine) 55%, transparent); }
+button.primary:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.banner p { max-width: none; }
+.options .banner { background: var(--fond); }   /* a message inside a grey card stands out in white */
+
+/* La phrase secrète : un bloc simple de la carte grise, pas un cadre à part */
+.phrase { margin: 1.25rem 0 .4rem; padding: 1.25rem 1.5rem; font-family: var(--police-mono); font-size: 1.2rem; line-height: 1.6; background: var(--fond-2); border: 1px solid var(--trait); border-radius: var(--rayon); overflow-wrap: anywhere; user-select: all; }
+
+/* Étapes : un itinéraire, comme les contrôles du vérificateur */
+ol.steps { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; margin: 0 0 1.5rem; padding: 0; font-size: .85rem; color: var(--texte-doux); }
+ol.steps li { display: flex; align-items: center; gap: .5rem; }
+ol.steps li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--fond); border: 3px solid var(--trait); }
+ol.steps li.done { color: var(--menthe-texte); }
+ol.steps li.done::before { background: var(--menthe); border-color: var(--menthe); }
+ol.steps li.current { color: var(--texte); font-weight: 600; }
+ol.steps li.current::before { border-color: var(--marine); }
+
+/* Faits et fiche : des lignes séparées par un trait fin, comme le contenu du DBoM */
+dl.facts { margin: 1.25rem 0; }
+dl.facts > div { display: grid; grid-template-columns: minmax(8rem, 15rem) 1fr; gap: .25rem 1rem; padding: .55rem 0; border-bottom: 1px solid var(--trait); }
+dl.facts dt { color: var(--texte-doux); font-size: .9rem; }
+dl.facts dd { margin: 0; font-family: var(--police-mono); font-size: .85rem; overflow-wrap: anywhere; }
+.sheet { margin: 1.25rem 0; padding: 1.5rem 1.5rem 1.25rem; background: var(--fond-2); border-radius: var(--rayon); }
+.sheet h2 { margin-top: 0; }
+ul.checklist { list-style: none; padding: 0; margin: 1rem 0 0; }
+ul.checklist li { padding: .3rem 0; }
+.container > ul { color: var(--texte-doux); padding-left: 1.2rem; }
+.container > ul b { color: var(--texte); }
+@media (max-width: 560px) { dl.facts > div { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) { .choice, button.primary { transition: none !important; } .choice:hover, button.primary:hover { transform: none; } }
+
+/* Impression : seule la fiche de récapitulatif, jamais un secret */
 @media print {
   body * { visibility: hidden; }
   #fiche, #fiche * { visibility: visible; }
-  #fiche { position: absolute; left: 0; top: 0; width: 100%; border: 0; }
+  #fiche { position: absolute; left: 0; top: 0; width: 100%; background: none; }
   :root { color-scheme: light; }
 }
+@media (max-width: 560px) { .top nav { display: none; } }
 
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap"><span class="brand" id="brand"></span><span class="tagline" id="tagline"></span></div></header>
-<noscript><main><p>Cet outil a besoin de JavaScript pour fonctionner dans votre navigateur, sans connexion. / This tool needs JavaScript.</p></main></noscript>
-<main id="app"></main>
-<footer id="footer"></footer>
+<header class="top"><div class="wrap"><span class="brand"><svg class="logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="28" height="28" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="14" fill="#0F1E3C"/><path d="M10 44H24L36 32H54" fill="none" stroke="#F5F7FA" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="10" cy="44" r="6" fill="#0F1E3C" stroke="#F5F7FA" stroke-width="4"/><circle cx="36" cy="32" r="6" fill="#0F1E3C" stroke="#F5F7FA" stroke-width="4"/><circle cx="54" cy="32" r="7" fill="#1FB58F"/></svg><span id="brand"></span></span><nav><span id="tagline"></span></nav></div></header>
+<div class="fond" aria-hidden="true">
+<svg class="chemin chemin-g" focusable="false" viewBox="0 0 360 300" preserveAspectRatio="xMinYMin meet"><path d="M-10 250H110L190 170H300"/><path d="M-10 290H90L170 210H240"/><circle class="station" cx="300" cy="170" r="10"/></svg>
+<svg class="chemin chemin-d" focusable="false" viewBox="0 0 360 300" preserveAspectRatio="xMaxYMin meet"><path d="M370 120H250L170 200H80"/><path d="M370 40H300L250 90H200"/><circle class="arrivee" cx="80" cy="200" r="11"/></svg>
+</div>
+<noscript><main class="container"><p>Cet outil a besoin de JavaScript pour fonctionner dans votre navigateur, sans connexion. / This tool needs JavaScript.</p></main></noscript>
+<main class="container" id="app"></main>
+<footer class="container foot" id="footer"></footer>
 <script>
 /* ChainDBoM — création des clés du client (lot 1 : module pur, sans interface, sans réseau, sans dépendance).
  *
@@ -18077,7 +18208,10 @@ var AgeEncryption = (() => {
     return el;
   }
   const p = (text, cls) => h('p', { class: cls, text });
-  const notice = (kind, title, text) => h('div', { class: 'notice ' + kind, role: kind === 'err' ? 'alert' : 'status' }, title ? h('strong', { text: title }) : null, text);
+  const panel = form => h('section', { class: 'options' }, form);   // the verifier's grey rounded card for forms
+  // Messages look like the verifier's: a coloured station before the text (success = mint, error = red, pending = amber ring).
+  const BANNER = { ok: 'success', err: 'error', warn: 'pending' };
+  const notice = (kind, title, text) => h('div', { class: 'banner ' + BANNER[kind], role: kind === 'err' ? 'alert' : 'status' }, title ? h('strong', { text: title }) : null, text ? h('p', { text }) : null);
   const tick = () => new Promise(resolve => root.setTimeout(resolve, 30));   // let the browser paint before heavy work
 
   function show(title, ...content) {
@@ -18129,7 +18263,7 @@ var AgeEncryption = (() => {
     return h('ol', { class: 'steps', 'aria-label': T.create.title },
       T.create.steps.map((text, i) => h('li', { class: i < current ? 'done' : i === current ? 'current' : '', 'aria-current': i === current ? 'step' : null, text })));
   }
-  function facts(rows) { return h('dl', { class: 'facts' }, rows.flatMap(([k, v]) => [h('dt', { text: k }), h('dd', { text: v })])); }
+  function facts(rows) { return h('dl', { class: 'facts' }, rows.map(([k, v]) => h('div', {}, h('dt', { text: k }), h('dd', { text: v })))); }
   function errorBox() { return h('div', { id: 'problem', 'aria-live': 'assertive' }); }
   function setProblem(text) { const box = doc.getElementById('problem'); box.replaceChildren(text ? notice('err', null, text) : ''); }
   async function busy(button, message, work) {
@@ -18173,7 +18307,7 @@ var AgeEncryption = (() => {
     h('label', { class: 'inline' }, responsible, T.create.responsible), p(T.create.responsibleHelp, 'help'),
     field('signing-id', T.create.signingId, signing), field('recipient-id', T.create.recipientId, recipient), p(T.create.idHelp, 'help'),
     errorBox(), h('div', { class: 'row' }, submit), busyBox());
-    show(T.create.title, steps(0), form);
+    show(T.create.title, steps(0), panel(form));
   }
 
   // ---- create: 2. passphrase and backup file ----
@@ -18188,7 +18322,7 @@ var AgeEncryption = (() => {
     const written = h('input', { type: 'checkbox', id: 'written' });
     const confirm = h('input', { type: 'text', id: 'confirm', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'none' });
     const submit = h('button', { class: 'primary', type: 'submit', text: T.passphrase.submit });
-    const result = h('div', { id: 'result' });
+    const result = h('div', { id: 'backup-result' });
     function draw() {
       const g = B.generatePassphrase();
       state.passphrase = g.passphrase; phraseBox.textContent = g.passphrase; strength.textContent = T.passphrase.strength(g.entropyBits);
@@ -18224,7 +18358,7 @@ var AgeEncryption = (() => {
     h('div', { class: 'row' }, another, toggle), ownBlock,
     h('label', { class: 'inline' }, written, T.passphrase.written), field('confirm', T.passphrase.confirmLabel, confirm),
     errorBox(), h('div', { class: 'row' }, submit), busyBox(), result);
-    show(T.passphrase.title, steps(1), form);
+    show(T.passphrase.title, steps(1), panel(form));
     draw();
   }
 
@@ -18246,7 +18380,7 @@ var AgeEncryption = (() => {
         } catch (error) { setProblem((error instanceof B.BackupError || error instanceof K.KeysError ? frenchError(error) + T.errors.hint : error.message)); }
       });
     } }, p(T.proof.intro), field('proof-file', T.proof.file, file), pass.nodes, errorBox(), h('div', { class: 'row' }, submit), busyBox());
-    show(T.proof.title, steps(2), form);
+    show(T.proof.title, steps(2), panel(form));
   }
 
   // ---- create: 4. delivery ----
@@ -18262,7 +18396,6 @@ var AgeEncryption = (() => {
       h('div', { class: 'row' }, T.delivery.secretFiles.map(([name]) => button(name, name, state.keys.files[name]))),
       h('h2', { text: T.delivery.publicTitle }), p(T.delivery.publicText),
       h('div', { class: 'row' }, button(T.delivery.cardFile, T.delivery.cardFile, state.keys.cardText)),
-      h('h2', { text: T.delivery.sheetTitle }),
       h('div', { class: 'sheet', id: 'fiche' }, h('h2', { text: T.delivery.sheetTitle + ' — ' + T.brand }), p(T.delivery.sheetText, 'muted'), facts(sheetRows),
         h('ul', { class: 'checklist' }, T.delivery.checklist.map(item => h('li', { text: '☐ ' + item })))),
       h('div', { class: 'row' }, h('button', { class: 'primary', type: 'button', id: 'print', text: T.delivery.print, onclick: () => root.print() })),
@@ -18290,16 +18423,16 @@ var AgeEncryption = (() => {
           const result = restoring ? await B.restore(bytes, pass.input.value, options) : { facts: await B.restoreTest(bytes, pass.input.value, options) };
           pass.input.value = '';
           const x = result.facts;
-          out.replaceChildren(notice('ok', T.check.okTitle, restoring ? T.check.restoredText : T.check.okText),
+          out.replaceChildren(...[notice('ok', T.check.okTitle, restoring ? T.check.restoredText : T.check.okText),
             facts([[T.check.facts.client, x.client_id], [T.check.facts.fingerprint, x.signing_key_fingerprint_sha256], [T.check.facts.recipient, x.recipient],
               [T.check.facts.created, x.backup_created_at], [T.check.facts.card, x.key_card_matched ? T.check.cardYes : T.check.cardNo]]),
-            restoring ? h('div', { class: 'row' }, T.delivery.secretFiles.map(([name]) => h('button', { class: 'primary', type: 'button', 'data-file': name, text: T.delivery.download + name, onclick: () => downloadText(name, result.files[name]) }))) : null);
+            restoring ? h('div', { class: 'row' }, T.delivery.secretFiles.map(([name]) => h('button', { class: 'primary', type: 'button', 'data-file': name, text: T.delivery.download + name, onclick: () => downloadText(name, result.files[name]) }))) : null].filter(Boolean));
         } catch (error) { setProblem(error instanceof B.BackupError || error instanceof K.KeysError ? frenchError(error) + T.errors.hint : error.message); }
       });
     } }, p(T.check.intro), field('check-file', T.check.file, file), pass.nodes, field('check-card', T.check.card, card, T.check.cardHelp),
     errorBox(), h('div', { class: 'row' }, submit), busyBox(), out,
     h('div', { class: 'row' }, h('button', { class: 'link', type: 'button', text: T.check.back, onclick: home })));
-    show(restoring ? T.check.restoreTitle : T.check.verifyTitle, form);
+    show(restoring ? T.check.restoreTitle : T.check.verifyTitle, panel(form));
   }
 
   // ---- start: can this browser do it at all? ----
@@ -18318,9 +18451,8 @@ var AgeEncryption = (() => {
     doc.title = T.title;
     doc.getElementById('brand').textContent = T.brand;
     doc.getElementById('tagline').textContent = T.tagline + ' — ' + T.version;
-    doc.getElementById('footer').textContent = T.footer;
-    if (root.location.protocol !== 'file:') main.before(notice('warn', null, T.hostedWarning));
-    main.before(h('p', { class: 'muted', text: T.privateTip }));
+    if (root.location.protocol !== 'file:') main.before(h('div', { class: 'container notes' }, notice('warn', null, T.hostedWarning)));
+    doc.getElementById('footer').replaceChildren(p(T.footer), p(T.privateTip));
     if (!await supported()) { show(T.home.title, notice('err', null, T.unsupported)); return; }
     home();
   }

@@ -1,58 +1,72 @@
-/* Outil de clés : mise en page propre à cet outil (les couleurs viennent de la charte Diadroma, style/tokens.css). */
-* { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; font-family: var(--police-texte); color: var(--texte); background: var(--fond); line-height: 1.5; -webkit-font-smoothing: antialiased; }
-:focus-visible { outline: 3px solid var(--menthe); outline-offset: 3px; border-radius: 6px; }
-header.top { border-bottom: 1px solid var(--trait); background: var(--nav-fond); }
-header.top .wrap { max-width: 760px; margin: 0 auto; padding: 0 1.5rem; height: 52px; display: flex; align-items: center; justify-content: space-between; }
-.brand { font-family: var(--police-titre); font-weight: 600; font-size: 1.05rem; }
-.tagline { color: var(--texte-doux); font-size: .82rem; }
-main { max-width: 760px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
-h1, h2 { font-family: var(--police-titre); letter-spacing: -.02em; line-height: 1.15; }
-h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); margin: 0 0 1rem; }
-h2 { font-size: 1.2rem; margin: 1.8rem 0 .5rem; }
+/* Outil de clés : ajouts propres à cet outil. Le style de base (tokens, navigation, tracés de fond, messages « station », cartes
+ * grises, boutons pastille) vient de style/tokens.css et style/style.css, les mêmes que le vérificateur : cette feuille n'en
+ * redéfinit rien d'autre que ce qui manque à des écrans à formulaires. */
 h1:focus { outline: none; }
-p { max-width: 40rem; }
+.top nav { color: var(--texte-doux); font-size: .82rem; }
+.brand .logo { width: 28px; height: 28px; display: block; }
+.notes { padding-bottom: 0; }
+.notes + .container { padding-top: 1.5rem; }
+.foot { padding-top: 1.5rem; padding-bottom: 3rem; border-top: 1px solid var(--trait); color: var(--texte-doux); font-size: .85rem; }
+.foot p { margin: 0 0 .5rem; font-size: .85rem; }
 .muted { color: var(--texte-doux); font-size: .92rem; }
-.notice { border: 1px solid var(--trait); border-left-width: 5px; border-radius: 12px; padding: .8rem 1rem; margin: 1rem 0; background: var(--fond-2); }
-.notice.warn { border-left-color: var(--ambre); }
-.notice.err { border-left-color: var(--erreur); color: var(--erreur-texte); }
-.notice.ok { border-left-color: var(--menthe); }
-.notice strong { display: block; }
-.choices { display: grid; gap: .9rem; margin: 1.2rem 0; }
-.choice { text-align: left; width: 100%; padding: 1rem 1.2rem; border: 1px solid var(--trait); border-radius: 16px; background: var(--fond-2); color: var(--texte); font: inherit; cursor: pointer; }
-.choice:hover { border-color: var(--marine); }
-.choice b { display: block; font-size: 1.1rem; margin-bottom: .15rem; }
-.choice span { color: var(--texte-doux); font-size: .92rem; }
-button.primary, a.button { display: inline-block; padding: .7rem 1.3rem; border-radius: 999px; border: 0; background: var(--marine); color: var(--fond); font: inherit; font-weight: 600; cursor: pointer; text-decoration: none; }
-button.primary:hover { background: var(--marine-survol); }
-button.primary[disabled] { opacity: .45; cursor: not-allowed; }
-button.link { background: none; border: 0; padding: 0; color: var(--lien); font: inherit; cursor: pointer; text-decoration: underline; }
-.row { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; margin: 1rem 0; }
-label { display: block; font-weight: 600; margin: 1rem 0 .25rem; }
-label.inline { display: flex; gap: .6rem; align-items: flex-start; font-weight: 400; }
-input[type=text], input[type=password], input[type=file] { width: 100%; max-width: 32rem; padding: .6rem .8rem; border: 1px solid var(--trait); border-radius: 10px; font: inherit; background: var(--fond); color: var(--texte); }
-input[type=checkbox] { margin-top: .3rem; width: 1.1rem; height: 1.1rem; }
-.help { color: var(--texte-doux); font-size: .88rem; margin: .2rem 0 0; }
-.error-text { color: var(--erreur-texte); font-size: .92rem; margin: .3rem 0 0; }
-ol.steps { list-style: none; display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0 0 1.2rem; }
-ol.steps li { padding: .25rem .8rem; border-radius: 999px; border: 1px solid var(--trait); color: var(--texte-doux); font-size: .85rem; }
-ol.steps li.current { background: var(--marine); color: var(--fond); border-color: var(--marine); }
-ol.steps li.done { border-color: var(--menthe); color: var(--menthe-texte); }
-.phrase { font-family: var(--police-mono); font-size: 1.15rem; padding: 1rem; border: 2px dashed var(--ambre); border-radius: 12px; background: var(--fond-2); word-break: break-word; user-select: all; }
-dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: .3rem 1rem; margin: 1rem 0; }
-dl.facts dt { color: var(--texte-doux); }
-dl.facts dd { margin: 0; font-family: var(--police-mono); font-size: .85rem; word-break: break-all; }
-ul.checklist { padding-left: 1.2rem; }
-.sheet { border: 1px solid var(--trait); border-radius: 12px; padding: 1rem 1.2rem; margin: 1rem 0; }
-footer { max-width: 760px; margin: 0 auto; padding: 1rem 1.5rem 3rem; color: var(--texte-doux); font-size: .85rem; border-top: 1px solid var(--trait); }
-.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-[hidden] { display: none !important; }
-@media (max-width: 520px) { dl.facts { grid-template-columns: 1fr; } }
-/* Impression : seule la fiche de récapitulatif, jamais un secret. */
+.help { color: var(--texte-doux); font-size: .88rem; margin: .3rem 0 0; }
+.row { display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; margin: 1.25rem 0 0; }
+.row .primary, .row button { margin-top: 0; }
+
+/* Écran d'accueil : trois grandes cartes cliquables, comme la zone de dépôt du vérificateur */
+.choices { display: grid; gap: 1rem; margin: 1.75rem 0; }
+.choice { display: block; width: 100%; text-align: left; padding: 1.4rem 1.5rem; font: inherit; color: var(--texte); background: var(--fond-2); border: 2px solid transparent; border-radius: var(--rayon); cursor: pointer; transition: border-color .18s, transform .18s cubic-bezier(.2,.8,.2,1); }
+.choice b { display: block; font-family: var(--police-titre); font-size: 1.15rem; letter-spacing: -.015em; }
+.choice span { display: block; margin-top: .2rem; font-size: .92rem; color: var(--texte-doux); }
+.choice:hover, .choice:focus-visible { border-color: var(--menthe); transform: translateY(-2px); }
+
+/* Formulaires : les champs du vérificateur, étendus aux mots de passe et aux cases à cocher */
+.options input[type=password] { display: block; width: 100%; margin-top: .4rem; padding: .65rem .8rem; font: inherit; font-family: var(--police-mono); font-size: .85rem; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 12px; transition: border-color .18s, box-shadow .18s; }
+.options input[type=password]:focus { outline: none; border-color: var(--menthe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--menthe) 25%, transparent); }
+.options label.inline { display: flex; gap: .6rem; align-items: flex-start; color: var(--texte-doux); }
+.options input[type=checkbox] { margin-top: .25rem; flex: none; }
+.options > form > p { color: var(--texte-doux); max-width: none; font-size: .95rem; }
+.options button.link, button.link { margin: 0; padding: 0; font: inherit; font-size: .92rem; color: var(--lien); background: none; border: 0; border-radius: 0; text-decoration: underline; cursor: pointer; box-shadow: none; transform: none; }
+.options button.link:hover, button.link:hover { background: none; box-shadow: none; transform: none; text-decoration: none; }
+.options button[disabled], button.primary[disabled] { opacity: .45; cursor: not-allowed; transform: none; box-shadow: none; }
+button.primary { margin-top: 1.25rem; padding: .7rem 1.5rem; font: inherit; font-weight: 500; color: var(--fond); background: var(--marine); border: 0; border-radius: 980px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s, background .18s; }
+button.primary:hover { background: var(--marine-survol); transform: translateY(-2px); box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--marine) 55%, transparent); }
+button.primary:active { transform: translateY(0) scale(.97); box-shadow: none; }
+.banner p { max-width: none; }
+.options .banner { background: var(--fond); }   /* a message inside a grey card stands out in white */
+
+/* La phrase secrète : un bloc simple de la carte grise, pas un cadre à part */
+.phrase { margin: 1.25rem 0 .4rem; padding: 1.25rem 1.5rem; font-family: var(--police-mono); font-size: 1.2rem; line-height: 1.6; background: var(--fond-2); border: 1px solid var(--trait); border-radius: var(--rayon); overflow-wrap: anywhere; user-select: all; }
+
+/* Étapes : un itinéraire, comme les contrôles du vérificateur */
+ol.steps { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; margin: 0 0 1.5rem; padding: 0; font-size: .85rem; color: var(--texte-doux); }
+ol.steps li { display: flex; align-items: center; gap: .5rem; }
+ol.steps li::before { content: ""; width: 12px; height: 12px; border-radius: 50%; background: var(--fond); border: 3px solid var(--trait); }
+ol.steps li.done { color: var(--menthe-texte); }
+ol.steps li.done::before { background: var(--menthe); border-color: var(--menthe); }
+ol.steps li.current { color: var(--texte); font-weight: 600; }
+ol.steps li.current::before { border-color: var(--marine); }
+
+/* Faits et fiche : des lignes séparées par un trait fin, comme le contenu du DBoM */
+dl.facts { margin: 1.25rem 0; }
+dl.facts > div { display: grid; grid-template-columns: minmax(8rem, 15rem) 1fr; gap: .25rem 1rem; padding: .55rem 0; border-bottom: 1px solid var(--trait); }
+dl.facts dt { color: var(--texte-doux); font-size: .9rem; }
+dl.facts dd { margin: 0; font-family: var(--police-mono); font-size: .85rem; overflow-wrap: anywhere; }
+.sheet { margin: 1.25rem 0; padding: 1.5rem 1.5rem 1.25rem; background: var(--fond-2); border-radius: var(--rayon); }
+.sheet h2 { margin-top: 0; }
+ul.checklist { list-style: none; padding: 0; margin: 1rem 0 0; }
+ul.checklist li { padding: .3rem 0; }
+.container > ul { color: var(--texte-doux); padding-left: 1.2rem; }
+.container > ul b { color: var(--texte); }
+@media (max-width: 560px) { dl.facts > div { grid-template-columns: 1fr; } }
+
+@media (prefers-reduced-motion: reduce) { .choice, button.primary { transition: none !important; } .choice:hover, button.primary:hover { transform: none; } }
+
+/* Impression : seule la fiche de récapitulatif, jamais un secret */
 @media print {
   body * { visibility: hidden; }
   #fiche, #fiche * { visibility: visible; }
-  #fiche { position: absolute; left: 0; top: 0; width: 100%; border: 0; }
+  #fiche { position: absolute; left: 0; top: 0; width: 100%; background: none; }
   :root { color-scheme: light; }
 }
+@media (max-width: 560px) { .top nav { display: none; } }
