@@ -1,0 +1,51 @@
+name: Construire la bibliothèque age (manuel)
+# Construit une copie unique et figée de la bibliothèque age-encryption pour l'outil de clés hors ligne, et la publie sur
+# la branche de revue chore/age-vendor-build (jamais sur main). Un humain relit, puis une PR l'intègre.
+on:
+  workflow_dispatch:
+    inputs:
+      update_lock:
+        description: "Régénérer le verrou npm (mise à jour volontaire des versions)"
+        type: boolean
+        default: false
+permissions:
+  contents: write
+concurrency:
+  group: age-vendor-build
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Verrou npm (première construction, ou mise à jour volontaire)
+        working-directory: keys/vendor/build
+        env:
+          UPDATE_LOCK: ${{ inputs.update_lock }}
+        run: |
+          set -euo pipefail
+          if [ ! -f package-lock.json ] || [ "$UPDATE_LOCK" = "true" ]; then
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          fi
+      - name: Construire et écrire MANIFEST.json
+        run: |
+          set -o pipefail
+          keys/vendor/build.sh --write 2>&1 | tee keys/vendor/build.log
+      - name: Publier le résultat (et le journal, même en cas d'échec) sur la branche de revue
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B chore/age-vendor-build
+          git add -f keys/vendor/build.log
+          for f in keys/vendor/build/package-lock.json keys/vendor/age-encryption.bundle.js keys/vendor/MANIFEST.json; do
+            if [ -f "$f" ]; then git add -f "$f"; fi
+          done
+          git commit -m "Construction de la bibliothèque age (automatique, à relire avant fusion)" || echo "rien à publier"
+          git push --force origin chore/age-vendor-build
