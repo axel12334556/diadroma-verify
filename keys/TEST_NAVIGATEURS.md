@@ -25,10 +25,10 @@ Résultat attendu à confirmer en particulier : Safari doit gérer Ed25519 et X2
 
 | Date | Navigateur | Version | Système | Résultat |
 | --- | --- | --- | --- | --- |
-| 2026-10-06 | Safari | 26.2 | macOS (version à relever) | parcours complet validé à la main |
-| 2026-10-06 | Firefox | 134.0.1 | macOS (version à relever) | parcours complet validé à la main |
+| 2026-10-06 | Safari | 26.2 | macOS 15.7.9 | parcours complet validé à la main |
+| 2026-10-06 | Firefox | 134.0.1 | macOS 15.7.9 | parcours complet validé à la main |
 
-Les versions des navigateurs ont été relevées après coup, telles que communiquées par la personne qui a fait le test ; la version de macOS reste à compléter (menu  > À propos de ce Mac). Le comportement
+Les versions des navigateurs ont été relevées après coup, telles que communiquées par la personne qui a fait le test. Le comportement
 de Safari sur Ed25519 et X25519 dépend de sa version, donc la version précise compte pour la documentation destinée aux clients.
 Un test automatique tourne en CI sur Chromium seulement ; refaire ce parcours à la main à chaque changement de l'interface ou de la
 bibliothèque age.
