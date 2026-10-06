@@ -41,8 +41,13 @@ n'envoie rien : il reçoit et rend des octets ou des chaînes. Le chiffrement vi
 | `restore(bytes, passphrase, [{card}])` | comme `restoreTest`, et rend aussi les trois fichiers (l'appelant les propose en téléchargement) |
 | `generatePassphrase([{words}])` | 7 mots tirés sans biais (rejet des tirages inégaux) dans `keys/wordlist.js` ; `entropyBits` est calculé sur la liste réelle (≈ 90 bits pour 7 mots) |
 
-Phrase secrète saisie à la main : au moins 12 caractères, sans saut de ligne, caractère de contrôle ni espace au début ou à la fin. Elle
-n'est **pas normalisée** (comme l'outil age) : une phrase avec accents doit être saisie de la même façon à la restauration.
+Phrase secrète saisie à la main : au moins 20 caractères et 4 mots, au moins 8 caractères différents, sans saut de ligne, caractère de
+contrôle ni espace au début ou à la fin ; sa force n'est **pas estimée** (la sécurité de la sauvegarde est exactement celle de la phrase :
+scrypt 2^18 ne ralentit un attaquant qu'à environ 2,5 s par essai et par cœur). Elle est **normalisée en NFC** avant chiffrement et à
+l'ouverture (un accent composé ou décomposé selon le clavier donne la même phrase) ; un fichier fait par une version antérieure est aussi
+essayé avec la phrase telle que saisie. Avec le programme `age` seul, tapez la forme NFC (celle de la plupart des claviers).
+À l'ouverture d'une sauvegarde, seul le coût scrypt 2^18 (celui d'age par défaut et de cet outil) est accepté : un coût plus faible signale
+un fichier affaibli, un coût plus élevé peut bloquer un ordinateur modeste.
 La phrase et le fichier de sauvegarde se rangent séparément ; ChainDBoM ne peut rien récupérer si les deux sont perdus.
 
 **Liste de mots** : copie de la « EFF Long Wordlist » (licence CC BY 3.0 US) telle que distribuée par KeePassXC. Elle compte 7772 mots,
@@ -76,7 +81,7 @@ fiche de clé) et la bibliothèque age vendorée.
 Style : le même que le vérificateur (`style/tokens.css` et `style/style.css` sont intégrés tels quels au fichier, `keys/app/app.css` n'ajoute que ce qui manque aux écrans à formulaires) : en-tête avec logo, tracés en fond, messages à « station » colorée, cartes grises, boutons pastille, clair et sombre. Pas de bandeau orange ni de cadre en pointillés (contrôlé par le test).
 
 Parcours : accueil → **créer** (clés en mémoire) → **phrase secrète** (7 mots tirés au hasard, à noter sur papier et à retaper ; ou phrase
-choisie, 12 caractères au moins) → **fichier de sauvegarde** → **preuve** (le client choisit le fichier téléchargé et retape la phrase
+choisie, 20 caractères et 4 mots au moins) → **fichier de sauvegarde** → **preuve** (le client choisit le fichier téléchargé et retape la phrase
 depuis son papier ; la phrase n'est plus affichée) → **livraison** (`client.json`, `signing.pem`, `age-identity.txt`, `key-card.json`
 publique, fiche récapitulative imprimable sans aucun secret). Les clés ne sont proposées **qu'après** la preuve. « Vérifier » et
 « Restaurer » rouvrent une sauvegarde existante (fiche de clé facultative).

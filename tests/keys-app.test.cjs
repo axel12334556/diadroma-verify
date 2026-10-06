@@ -108,12 +108,25 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       assert.equal(phrase.split('-').length, 7);
       assert.ok(phrase.split('-').every(w => ctx.ChainDBoMWordlist.includes(w)));
       await page.click('text=Tirer une autre phrase');
-      const fresh = (await page.locator('#phrase').innerText()).trim(); assert.notEqual(fresh, phrase);
+      let fresh = (await page.locator('#phrase').innerText()).trim(); assert.notEqual(fresh, phrase);
       await page.click('button[type=submit]');
       assert.match(await problemText(page), /Cochez la case/);
-      await page.check('#written'); await page.fill('#confirm', fresh + 'x'); await page.click('button[type=submit]');
+      // K1: an own phrase that is short, repetitive or not made of several words is refused, with the "not estimated" warning shown.
+      await page.click('text=Choisir ma propre phrase');
+      assert.match(await page.locator('body').innerText(), /Force non estimée/);
+      for (const weak of ['aaaaaaaaaaaa', 'motdepasse12', '123456789012']) {
+        await page.check('#written'); await page.fill('#own-phrase', weak); await page.fill('#confirm', weak); await page.click('button[type=submit]');
+        await page.waitForFunction(() => document.getElementById('problem').innerText.trim() !== '');
+        assert.match(await problemText(page), /phrase secrète/, weak);
+        assert.equal(await page.locator('#download-backup').count(), 0, 'no backup for a weak phrase: ' + weak);
+      }
+      await page.click('text=Revenir à une phrase tirée au hasard');
+      const back = (await page.locator('#phrase').innerText()).trim();
+      assert.equal(back.split('-').length, 7);
+      fresh = back; // the phrase now on screen is the one the rest of the flow uses
+      await page.check('#written'); await page.fill('#confirm', back + 'x'); await page.click('button[type=submit]');
       assert.match(await problemText(page), /ne correspond pas/);
-      await page.fill('#confirm', fresh); await page.click('button[type=submit]');
+      await page.fill('#confirm', back); await page.click('button[type=submit]');
       await page.waitForSelector('#download-backup');
       assert.equal(await page.locator('[data-file]').count(), 0);
       assert.ok(await page.locator('text=Passer à la preuve').isDisabled(), 'cannot skip the download');
@@ -221,14 +234,17 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       assert.deepEqual(problems, []);
     }
 
-    // 3. Served by a website: the page says so (the file from disk is the recommended way).
+    // 3. Served by a website: nothing can be created, backed up or checked (K4); only the file opened from the disk works.
     {
       const server = http.createServer((req, res) => { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); res.end(html); });
       await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
       const origin = `http://127.0.0.1:${server.address().port}`;
       const { context, page } = await open({ allow: u => u.startsWith(origin) });
-      await page.goto(origin + '/'); await page.waitForSelector('[data-action=create]');
+      await page.goto(origin + '/'); await page.waitForSelector('.banner');
       assert.match(await page.locator('body').innerText(), /affichée depuis un site web/);
+      assert.equal(await page.locator('[data-action=create]').count(), 0, 'no way to create keys from a web page');
+      assert.equal(await page.locator('[data-action=check]').count(), 0, 'no way to check a backup from a web page');
+      assert.equal(await page.locator('input[type=file], input[type=text], input[type=password]').count(), 0, 'no field that could receive a secret');
       await context.close(); server.close();
     }
 

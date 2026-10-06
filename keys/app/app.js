@@ -50,6 +50,7 @@
     if (!(error instanceof B.BackupError)) return E.generic;
     if (/not a passphrase-protected age file/.test(m)) return E.wrongFile;
     if (/wrong passphrase/.test(m)) return E.wrongPhrase;
+    if (/unsupported scrypt cost/.test(m)) return E.wrongCost;
     if (/do not match the published key card/.test(m)) return E.cardMismatch;
     if (/key card/.test(m)) return E.cardInvalid;
     if (/phrase secrète/.test(m)) return m;
@@ -268,8 +269,9 @@
     doc.title = T.title;
     doc.getElementById('brand').textContent = T.brand;
     doc.getElementById('tagline').textContent = T.tagline + ' — ' + T.version;
-    if (root.location.protocol !== 'file:') main.before(h('div', { class: 'container notes' }, notice('warn', null, T.hostedWarning)));
     doc.getElementById('footer').replaceChildren(p(T.footer), p(T.privateTip));
+    // K4: keys are never created, backed up or checked from a web page: only from the published file opened from the disk.
+    if (root.location.protocol !== 'file:') { show(T.home.title, notice('err', null, T.hostedBlocked)); return; }
     if (!await supported()) { show(T.home.title, notice('err', null, T.unsupported)); return; }
     home();
   }
