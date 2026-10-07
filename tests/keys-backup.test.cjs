@@ -183,11 +183,15 @@ const enc = new TextEncoder();
     await refuse(new Uint8Array(300 * 1024), /not a passphrase-protected age file/);   // the sealed file itself exceeds the 256 KiB cap
   }
   // The reader accepts what `tar` itself (ustar format) writes, not only what our writer writes.
-  if (hasTools) {
+  // The options below are GNU tar's: on macOS (bsdtar) use `gtar` if installed, else skip this one cross-check (never in CI, REQUIRE_AGE=1).
+  const gnuTar = ['tar', 'gtar'].find(t => /GNU tar/.test(String(spawnSync(t, ['--version']).stdout || '')));
+  if (hasTools && !gnuTar && process.env.REQUIRE_AGE === '1') { console.error('GNU tar required (REQUIRE_AGE=1)'); process.exit(1); }
+  if (hasTools && !gnuTar) console.log('GNU tar absent (macOS: brew install gnu-tar): cross-check with tar skipped');
+  if (hasTools && gnuTar) {
     const dir = path.join(tmp, 'tarsrc'); fs.mkdirSync(dir);
     for (const [name, content] of await entries(keys.files)) fs.writeFileSync(path.join(dir, name), content);
     const tarFile = path.join(tmp, 'by-tar.tar');
-    const made2 = spawnSync('tar', ['--format=ustar', '--owner=0', '--group=0', '--numeric-owner', '--mtime=@0', '-cf', tarFile, '-C', dir, 'backup-manifest.json', 'client.json', 'signing.pem', 'age-identity.txt']);
+    const made2 = spawnSync(gnuTar, ['--format=ustar', '--owner=0', '--group=0', '--numeric-owner', '--mtime=@0', '-cf', tarFile, '-C', dir, 'backup-manifest.json', 'client.json', 'signing.pem', 'age-identity.txt']);
     assert.equal(made2.status, 0, String(made2.stderr));
     const parsed = parseArchive(fs.readFileSync(tarFile));
     assert.deepEqual(Object.keys(parsed.members).sort(), ['age-identity.txt', 'client.json', 'signing.pem']);
