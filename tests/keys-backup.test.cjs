@@ -212,11 +212,13 @@ const enc = new TextEncoder();
     assert.equal(manifest.format, 'chaindbom-key-backup-v1'); assert.equal(manifest.created_at, '2026-10-06T08:00:00Z');
     assert.equal(fs.readFileSync(path.join(outDir, 'backup-manifest.json'), 'utf8'), pythonJson(manifest));   // same layout as Python's json.dumps(indent=2, sort_keys=True)
     // 6b. A backup made by the age program itself (passphrase typed at its prompt) from a ustar archive opens here.
-    const cliFile = path.join(tmp, 'made-by-cli.age');
-    const mk = tty(`age -p -o '${cliFile}' < '${path.join(tmp, 'by-tar.tar')}'`);
-    assert.equal(mk.status, 0, mk.stderr);
-    assert.equal((await B.restoreTest(new Uint8Array(fs.readFileSync(cliFile)), PASSPHRASE, { card })).key_card_matched, true);
-    await rejects(B.restoreTest(new Uint8Array(fs.readFileSync(cliFile)), 'another passphrase of mine'), /wrong passphrase/);
+    if (gnuTar) {  // needs the archive written by GNU tar above
+      const cliFile = path.join(tmp, 'made-by-cli.age');
+      const mk = tty(`age -p -o '${cliFile}' < '${path.join(tmp, 'by-tar.tar')}'`);
+      assert.equal(mk.status, 0, mk.stderr);
+      assert.equal((await B.restoreTest(new Uint8Array(fs.readFileSync(cliFile)), PASSPHRASE, { card })).key_card_matched, true);
+      await rejects(B.restoreTest(new Uint8Array(fs.readFileSync(cliFile)), 'another passphrase of mine'), /wrong passphrase/);
+    }
   } else console.log('age/tar/python3 absents : interopérabilité ignorée (REQUIRE_AGE=1 la rend obligatoire)');
   // 6c. A backup made by the ChainDBoM Python tool (committed, synthetic keys, public test passphrase) opens here and is complete.
   const python = new Uint8Array(vector('backup-python.age'));
