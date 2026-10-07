@@ -457,7 +457,10 @@
   }
 
   // ------------------------------------------------------------------ verification
-  async function verify(doc, options) {
+  // `proof` is preferably the RAW text (or UTF-8 bytes) of the file: only then can the guard against integers written like
+  // decimals (V8, "80.0") apply inside verify() itself, as JSON.parse would silently turn 80.0 into 80. An already parsed
+  // object is still accepted, but then the caller must have run checkNumberLiterals on the text (the page does).
+  async function verify(proof, options) {
     options = options || {};
     const checks = [];
     const record = (id, status, detail) => { checks.push({ id, status, detail }); return status === 'pass'; };
@@ -470,8 +473,16 @@
     };
     const expect = (actual, expected, name) => { if (actual !== expected) throw new Error(name + ' : valeur recalculée différente de celle de la preuve'); };
 
-    let parts;
-    try { parts = parseDocument(doc); } catch (error) {
+    let parts, doc = proof;
+    try {
+      if (typeof proof === 'string' || proof instanceof Uint8Array || (proof && Object.prototype.toString.call(proof) === '[object Uint8Array]')) {
+        let text = proof;
+        if (typeof proof !== 'string') { try { text = new TextDecoder('utf-8', { fatal: true }).decode(proof); } catch { throw new FormatError('fichier non UTF-8'); } }
+        checkNumberLiterals(text);
+        try { doc = JSON.parse(text); } catch { throw new FormatError('fichier JSON illisible'); }
+      }
+      parts = parseDocument(doc);
+    } catch (error) {
       if (!(error instanceof FormatError)) throw error;
       record('format', 'fail', error.message);
       return summary(checks);

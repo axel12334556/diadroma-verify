@@ -50,5 +50,19 @@ const clone = name => JSON.parse(fs.readFileSync('tests/vectors/v2b/' + name, 'u
   }
   for (const name of ['valid_5_leaves.json', 'valid_single.json']) V2B.checkNumberLiterals(fs.readFileSync('tests/vectors/v2b/' + name, 'utf8'));
   for (const name of ['proof-1.json', 'proof-2.json']) V2B.checkNumberLiterals(fs.readFileSync('tests/vectors/real/' + name, 'utf8'));
+  // V8, inside verify() itself: the raw text (or bytes) of a proof written with 80.0 is refused at the format step, a direct
+  // caller no longer depends on the page; the same file written with 80 is accepted.
+  const rawGood = fs.readFileSync('tests/vectors/v2b/valid_5_leaves.json', 'utf8');
+  const rawBad = rawGood.replace(/"batch_number": ?(\d+)/, '"batch_number": $1.0');
+  assert.notEqual(rawBad, rawGood, 'the vector has a batch_number to rewrite');
+  for (const input of [rawBad, new TextEncoder().encode(rawBad)]) {
+    const refused = plain(await V2B.verify(input, {}));
+    assert.equal(refused.level, 'INVALIDE');
+    assert.match(refused.checks.find(c => c.id === 'format').detail, /décimal/);
+  }
+  assert.notEqual(plain(await V2B.verify(rawGood, {})).level, 'INVALIDE');
+  assert.notEqual(plain(await V2B.verify(new TextEncoder().encode(rawGood), {})).level, 'INVALIDE');
+  assert.equal(plain(await V2B.verify('{not json', {})).level, 'INVALIDE');
+  assert.equal(plain(await V2B.verify(Uint8Array.from([0xff, 0xfe]), {})).level, 'INVALIDE');
   console.log('v2b hardening : bandeau vert réservé à une clé authentifiée, clés d\'ordre faible refusées, entiers écrits en décimal refusés');
 })().catch(e => { console.error(e); process.exitCode = 1; });
