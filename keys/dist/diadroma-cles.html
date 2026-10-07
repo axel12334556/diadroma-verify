@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-BDSQnrt1D2qDjCAFFuaEjkjXsNl9cQJOzAgi8zSl+q0=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-vUD6lUJEpPp8E4cD+asBBAxn3Hdo8tVPOeSysCm+iKc=' 'sha256-gSp4vhyPQlq82Hz4k69fEpbHUR+owLSK7Uv/nFgeNv8=' 'sha256-w9SLm1gZX7cUZo1mayOQzeXbneg6SKyY6+ODl/XouQU='; style-src 'sha256-E3E2MzA89vgXdZnUKyUKzxK7dH/BNj62MiHWRSYxrRg='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-GMrQ4/wfHmafIDIgMXmyoQYVPrPG2hTkmwlGCYGC+LM=' 'sha256-+iE+ZPXmBAxrTsIxepKlSAeGkddGJor8WgahatV1Pyo=' 'sha256-q9oC+xxOfBsKhaKzKA9oApOzlsjWYmlF/urs4LgXxjA=' 'sha256-9Rnhe7aMddEQ/aCgXk9sKC85UVXeNP8T0tSFfD+BIr8=' 'sha256-vUD6lUJEpPp8E4cD+asBBAxn3Hdo8tVPOeSysCm+iKc=' 'sha256-gSp4vhyPQlq82Hz4k69fEpbHUR+owLSK7Uv/nFgeNv8=' 'sha256-w9SLm1gZX7cUZo1mayOQzeXbneg6SKyY6+ODl/XouQU='; style-src 'sha256-E3E2MzA89vgXdZnUKyUKzxK7dH/BNj62MiHWRSYxrRg='; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="referrer" content="no-referrer">
 <title>Diadroma — Mes clés</title>
 <style>
@@ -8506,7 +8506,8 @@ ul.checklist li { padding: .3rem 0; }
     if (!HEX64.test(blockHash)) throw new Error('empreinte de bloc invalide');
     const block = JSON.parse(await fetchText(fetchImpl, BLOCKSTREAM_API + '/block/' + blockHash));
     if (!block || block.id !== blockHash || block.height !== height || !HEX64.test(block.merkle_root || '')) throw new Error('bloc incohérent');
-    return block.merkle_root;
+    // The block time is only used for the key revocation date (a miner sets it, within a margin of a couple of hours).
+    return { merkleRoot: block.merkle_root, time: Number.isSafeInteger(block.timestamp) && block.timestamp > 0 ? block.timestamp : null };
   }
 
   function normalizeFingerprint(value) {
@@ -8665,6 +8666,40 @@ ul.checklist li { padding: .3rem 0; }
   }
 
   // ------------------------------------------------------------------ verification
+  // ------------------------------------------------------------------ key revocation date (review finding N4)
+  // A block's time is set by its miner: it may be up to about two hours off. A proof is therefore cleared only if its
+  // block is dated at least this margin BEFORE the declared compromise; anything else is doubtful.
+  const REVOCATION_MARGIN_SECONDS = 2 * 3600;
+  function parseInstant(value) {
+    const text = String(value).trim();
+    if (!/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2}))?$/.test(text)) return null;
+    // A bare date means the START of that day in UTC: the earliest reading, which is the safe one here.
+    const ms = Date.parse(text.length === 10 ? text + 'T00:00:00Z' : text);
+    return Number.isFinite(ms) ? ms : null;
+  }
+  function parseBlockTime(value) {
+    if (typeof value === 'number' && Number.isSafeInteger(value) && value > 0) return value;
+    const ms = parseInstant(value);
+    return ms === null ? null : Math.floor(ms / 1000);
+  }
+  function checkRevocation(record, compromisedSince, blockCheck, blockTime, height) {
+    const since = parseInstant(compromisedSince);
+    if (since === null) return record('key_revocation', 'fail', 'date de compromission illisible (attendu : 2026-10-05T12:00:00Z ou 2026-10-05)');
+    const when = new Date(since).toISOString();
+    if (!blockCheck || blockCheck.status !== 'pass') {
+      return record('key_revocation', 'fail', "l'ancrage n'est pas confirmé par un bloc Bitcoin : impossible de dire si cette preuve précède la compromission déclarée le " + when + ' ; elle est douteuse');
+    }
+    if (blockTime === null) {
+      return record('key_revocation', 'fail', "l'heure du bloc " + height + " est inconnue (fournir l'heure du bloc ou autoriser la lecture auprès de Blockstream) : impossible de dire si cette preuve précède la compromission déclarée le " + when + ' ; elle est douteuse');
+    }
+    const blockIso = new Date(blockTime * 1000).toISOString();
+    if (blockTime * 1000 + REVOCATION_MARGIN_SECONDS * 1000 <= since) {
+      return record('key_revocation', 'pass', 'bloc ' + height + ' daté du ' + blockIso + ', au moins 2 h avant la compromission déclarée le ' + when + ' : la clé n\'était pas compromise à l\'ancrage');
+    }
+    return record('key_revocation', 'fail', 'bloc ' + height + ' daté du ' + blockIso + (blockTime * 1000 >= since ? ', à partir de' : ', moins de 2 h avant') +
+      ' la compromission déclarée le ' + when + ' : la preuve a pu être fabriquée avec la clé volée ; elle est douteuse');
+  }
+
   // `proof` is preferably the RAW text (or UTF-8 bytes) of the file: only then can the guard against integers written like
   // decimals (V8, "80.0") apply inside verify() itself, as JSON.parse would silently turn 80.0 into 80. An already parsed
   // object is still accepted, but then the caller must have run checkNumberLiterals on the text (the page does).
@@ -8757,6 +8792,7 @@ ul.checklist li { padding: .3rem 0; }
       record('ots_bitcoin_attestation', 'skipped', 'preuve .ots illisible');
     }
 
+    let blockTime = null; // seconds since the epoch, from options.blockTime or from the explorer (revocation date only)
     const attested = checks.some(c => c.id === 'ots_bitcoin_attestation' && c.status === 'pass');
     if (!attested) {
       record('bitcoin_block', 'skipped', 'pas d\'attestation Bitcoin à contrôler');
@@ -8765,11 +8801,14 @@ ul.checklist li { padding: .3rem 0; }
     } else {
       const height = anchor.anchor_block_height || ots.attestations.find(a => a.type === 'bitcoin').height;
       let blockRoot = options.blockMerkleRoot || null;
+      if (options.blockTime !== undefined && options.blockTime !== null) blockTime = parseBlockTime(options.blockTime);
       if (!blockRoot) {
         const fetchImpl = options.fetchImpl || (typeof root.fetch === 'function' ? root.fetch.bind(root) : null);
         try {
           if (!fetchImpl) throw new Error('accès réseau indisponible');
-          blockRoot = await fetchBlockMerkleRoot(fetchImpl, height);
+          const fetched = await fetchBlockMerkleRoot(fetchImpl, height);
+          blockRoot = fetched.merkleRoot;
+          if (blockTime === null) blockTime = fetched.time;
         } catch (error) { record('bitcoin_block', 'skipped', 'explorateur injoignable ou réponse invalide : ' + error.message); }
       }
       if (blockRoot) {
@@ -8777,6 +8816,11 @@ ul.checklist li { padding: .3rem 0; }
         if (attestedDigests.some(d => hex(d.slice().reverse()) === wanted)) record('bitcoin_block', 'pass', 'digest atteste (octets inversés) == merkle root du bloc ' + height);
         else record('bitcoin_block', 'fail', 'le digest atteste ne correspond pas au merkle root fourni pour le bloc ' + height);
       }
+    }
+
+    if (options.compromisedSince !== undefined && options.compromisedSince !== null && options.compromisedSince !== '') {
+      checkRevocation(record, options.compromisedSince, checks.find(c => c.id === 'bitcoin_block'), blockTime,
+        anchor.anchor_block_height || (ots && ots.attestations.find(a => a.type === 'bitcoin') || {}).height);
     }
 
     if (!options.dbomBytes) {

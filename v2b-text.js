@@ -32,6 +32,7 @@
     ots_commitment: "Engagement OpenTimestamps sur l'empreinte du lot",
     ots_bitcoin_attestation: 'Attestation Bitcoin déclarée dans la preuve',
     bitcoin_block: 'Concordance avec le bloc Bitcoin',
+    key_revocation: 'Ancrage antérieur à la compromission de la clé',
     record_hash_vs_dbom: 'Correspondance avec le DBoM en clair',
   };
   const STATUS_TEXT = { pass: 'Réussi', fail: 'Échec', skipped: 'Non vérifié' };
