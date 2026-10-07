@@ -111,16 +111,9 @@ const PYTHON_PASSPHRASE = 'synthetic test passphrase 7F3A-91C2';
       let fresh = (await page.locator('#phrase').innerText()).trim(); assert.notEqual(fresh, phrase);
       await page.click('button[type=submit]');
       assert.match(await problemText(page), /Cochez la case/);
-      // K1: an own phrase that is short, repetitive or not made of several words is refused, with the "not estimated" warning shown.
-      await page.click('text=Choisir ma propre phrase');
-      assert.match(await page.locator('body').innerText(), /Force non estimée/);
-      for (const weak of ['aaaaaaaaaaaa', 'motdepasse12', '123456789012']) {
-        await page.check('#written'); await page.fill('#own-phrase', weak); await page.fill('#confirm', weak); await page.click('button[type=submit]');
-        await page.waitForFunction(() => document.getElementById('problem').innerText.trim() !== '');
-        assert.match(await problemText(page), /phrase secrète/, weak);
-        assert.equal(await page.locator('#download-backup').count(), 0, 'no backup for a weak phrase: ' + weak);
-      }
-      await page.click('text=Revenir à une phrase tirée au hasard');
+      // K1 (review): no way to choose one's own phrase in the client path; only the random phrase is offered.
+      assert.equal(await page.locator('#own-phrase').count(), 0);
+      assert.doesNotMatch(await page.locator('body').innerText(), /propre phrase/);
       const back = (await page.locator('#phrase').innerText()).trim();
       assert.equal(back.split('-').length, 7);
       fresh = back; // the phrase now on screen is the one the rest of the flow uses
