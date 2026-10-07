@@ -107,6 +107,22 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       assert.match(await page.locator('#v2bReport .banner').getAttribute('class'), /success/);
       // V9: the report names the fingerprint and where it came from.
       assert.match(await page.locator('#reportMeta').textContent(), /Empreinte de confiance utilisée[\s\S]*saisie à la main/);
+      // N4: with the date of a key compromise, a typed block root gives no block time: the proof turns doubtful.
+      await page.fill('#optRevoked', '2026-12-31T12:00:00Z');
+      await page.click('#rerun');
+      await page.waitForFunction(() => /non valide ou incomplète/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
+      assert.match(await page.locator('#v2bReport').innerText(), /heure du bloc[\s\S]*douteuse/);
+      // Read from Blockstream (block time 1790000000, September 2026) and compromised later: cleared, green again.
+      await page.fill('#optBlockRoot', '');
+      await page.check('#optFetchBlock');
+      await page.click('#rerun');
+      await page.waitForFunction(() => /confirmée par un bloc/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
+      assert.match(await page.locator('#v2bReport').innerText(), /la clé n'était pas compromise à l'ancrage/);
+      // Compromised before the block was mined: doubtful again.
+      await page.fill('#optRevoked', '2026-09-01');
+      await page.click('#rerun');
+      await page.waitForFunction(() => /non valide ou incomplète/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
+      assert.match(await page.locator('#v2bReport').innerText(), /à partir de[\s\S]*douteuse/);
       assert.deepEqual(problems, []);
       await context.close();
     }

@@ -33,7 +33,7 @@ const NOW = new Date('2026-10-06T09:00:00Z');
   assert.deepEqual(Object.keys(report.proof), ['format', 'file_sha256', 'client_id', 'submission_id', 'record_hash', 'batch_number']);
   assert.equal(report.checks.length, result.checks.length);
   for (const c of report.checks) { assert.ok(c.label && c.status_text && typeof c.detail === 'string'); assert.notEqual(c.label, c.id); }
-  assert.deepEqual(report.inputs, { trusted_fingerprint_provided: true, trusted_fingerprint: null, trusted_fingerprint_source: null, key_card_provided: false, block_root_provided: true, block_read_from_blockstream: false, dbom_provided: true });
+  assert.deepEqual(report.inputs, { trusted_fingerprint_provided: true, trusted_fingerprint: null, trusted_fingerprint_source: null, key_card_provided: false, block_root_provided: true, block_read_from_blockstream: false, dbom_provided: true, compromised_since: null });
   // V9: the report names the fingerprint that was used and where it came from; an invalid value or origin is dropped.
   const FP = 'ab'.repeat(32);
   for (const source of ['typed', 'key_card', 'device_memory']) {
@@ -82,5 +82,7 @@ const NOW = new Date('2026-10-06T09:00:00Z');
   assert.throws(() => R.buildReport({ result: null, proofDoc: doc, proofSha256: sha, generatedAt: NOW }));
   assert.throws(() => R.buildReport({ result, proofDoc: doc, proofSha256: 'xyz', generatedAt: NOW }));
   assert.throws(() => R.buildReport({ result, proofDoc: doc, proofSha256: sha, generatedAt: new Date('x') }));
+  assert.equal(plain(R.buildReport({ result, proofDoc: doc, proofSha256: sha, generatedAt: NOW, inputs: { compromisedSince: '2026-10-05T12:00:00Z' } })).inputs.compromised_since, '2026-10-05T12:00:00Z');
+  assert.equal(plain(R.buildReport({ result, proofDoc: doc, proofSha256: sha, generatedAt: NOW, inputs: { compromisedSince: 'x'.repeat(41) } })).inputs.compromised_since, null);
   console.log('rapport de vérification : structure, absence de clair, formulation et refus contrôlés');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -44,6 +44,7 @@ jobs:
           node tests/v2b-text.test.cjs
           node tests/v2b-limits.test.cjs
           node tests/v2b-hardening.test.cjs
+          node tests/v2b-revocation.test.cjs
           node tests/v2b-real.test.cjs
           node tests/keycard.test.cjs
           node tests/truststore.test.cjs

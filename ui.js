@@ -11,6 +11,7 @@ const optCard = document.getElementById('optKeyCard');
 const cardStatus = document.getElementById('cardStatus');
 const optFetch = document.getElementById('optFetchBlock');
 const optRoot = document.getElementById('optBlockRoot');
+const optRevoked = document.getElementById('optRevoked');
 const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
 const dbomView = document.getElementById('dbomView');
@@ -159,7 +160,7 @@ function refreshReport(result, options, doc, proofSha256) {
   if (!proofSha256) return;
   try {
     currentReport = ChainDBoMReport.buildReport({ result, proofDoc: doc, proofSha256, generatedAt: new Date(),
-      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), trustedFingerprint: options.reportFingerprint, trustedFingerprintSource: options.reportFingerprintSource, keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(),
+      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), trustedFingerprint: options.reportFingerprint, trustedFingerprintSource: options.reportFingerprintSource, keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(), compromisedSince: optRevoked.value.trim() || null,
         blockReadFromBlockstream: !!options.fetchBlock, dbomProvided: !!options.dbomBytes } });
   } catch { return; }
   const r = currentReport, rows = el('dl', 'dbom-rows');
@@ -180,7 +181,7 @@ async function runV2b() {
   if (!currentV2b) return;
   const gen = ++generation, doc = currentV2bText || currentV2b, proofSha256 = currentProofSha256; // frozen for this run
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
-    blockMerkleRoot: optRoot.value.trim() || undefined,
+    blockMerkleRoot: optRoot.value.trim() || undefined, compromisedSince: optRevoked.value.trim() || undefined,
     fetchBlock: optFetch.checked && !optRoot.value.trim() };
   const fingerprint = currentFingerprint(); // V9: the report states which fingerprint was used and where it came from
   options.reportFingerprint = fingerprint;

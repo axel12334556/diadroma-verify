@@ -62,6 +62,7 @@
         block_root_provided: given.blockRootProvided === true,
         block_read_from_blockstream: given.blockReadFromBlockstream === true,
         dbom_provided: given.dbomProvided === true,
+        compromised_since: typeof given.compromisedSince === 'string' && given.compromisedSince.length <= 40 ? given.compromisedSince : null,
       },
       checks: result.checks.map(c => ({
         id: String(c.id), label: T.CHECK_LABELS[c.id] || String(c.id),
