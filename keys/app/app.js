@@ -130,13 +130,9 @@
 
   // ---- create: 2. passphrase and backup file ----
   function createPassphrase() {
-    let own = false;
     const phraseBox = h('div', { class: 'phrase', id: 'phrase', 'aria-live': 'off' });
     const strength = p('', 'help');
-    const ownInput = h('input', { type: 'text', id: 'own-phrase', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'none' });
-    const ownBlock = h('div', { hidden: true }, field('own-phrase', T.passphrase.ownLabel, ownInput, T.passphrase.ownHelp));
     const another = h('button', { class: 'link', type: 'button', text: T.passphrase.another });
-    const toggle = h('button', { class: 'link', type: 'button', text: T.passphrase.own });
     const written = h('input', { type: 'checkbox', id: 'written' });
     const confirm = h('input', { type: 'text', id: 'confirm', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'none' });
     const submit = h('button', { class: 'primary', type: 'submit', text: T.passphrase.submit });
@@ -145,15 +141,9 @@
       const g = B.generatePassphrase();
       state.passphrase = g.passphrase; phraseBox.textContent = g.passphrase; strength.textContent = T.passphrase.strength(g.entropyBits);
     }
-    function mode(ownMode) {
-      own = ownMode; ownBlock.hidden = !own; phraseBox.hidden = own; another.hidden = own;
-      toggle.textContent = own ? T.passphrase.generated : T.passphrase.own;
-      if (own) { state.passphrase = null; strength.textContent = ''; ownInput.focus(); } else draw();
-      confirm.value = '';
-    }
+    // K1 (review): the client path offers only a random phrase; a chosen phrase is a weak point (the file can be attacked offline).
     another.addEventListener('click', draw);
-    toggle.addEventListener('click', () => mode(!own));
-    const current = () => (own ? ownInput.value : state.passphrase);
+    const current = () => state.passphrase;
     const form = h('form', { novalidate: true, onsubmit: async event => {
       event.preventDefault();
       const phrase = current();
@@ -165,7 +155,7 @@
           state.backup = made; state.passphrase = phrase;
           const name = 'diadroma-sauvegarde-cles-' + state.keys.publicFacts.client_id.slice(0, 8) + '-' + dateStamp(new Date()) + '.age';
           submit.hidden = true;
-          for (const el of [written, confirm, ownInput, another, toggle]) el.disabled = true;
+          for (const el of [written, confirm, another]) el.disabled = true;
           const next = h('button', { class: 'primary', type: 'button', disabled: true, text: T.passphrase.next, onclick: createProof });
           result.replaceChildren(notice('ok', null, T.passphrase.done), h('div', { class: 'row' },
             h('button', { class: 'primary', type: 'button', id: 'download-backup', text: T.passphrase.download, onclick: () => { download(name, made.bytes, 'application/octet-stream'); state.downloaded = true; next.disabled = false; } }), next));
@@ -173,7 +163,7 @@
       });
     } },
     p(T.create.createdText), p(T.passphrase.intro), notice('warn', null, T.passphrase.write), phraseBox, strength,
-    h('div', { class: 'row' }, another, toggle), ownBlock,
+    h('div', { class: 'row' }, another),
     h('label', { class: 'inline' }, written, T.passphrase.written), field('confirm', T.passphrase.confirmLabel, confirm),
     errorBox(), h('div', { class: 'row' }, submit), busyBox(), result);
     show(T.passphrase.title, steps(1), panel(form));

@@ -27,6 +27,7 @@ let dropSeq = 0; // numbers the dropped files: a file read that finishes after a
 let generation = 0; // incremented by every drop or verification: a result is shown only if no newer one was started (V2)
 let currentLegacy = null; // old-format proof (timestamp only, no signature) dropped by the user
 let currentV2b = null;
+let currentV2bText = null; // raw text of that proof: verify() checks it itself (V8)
 let currentV2bResult = null; // verdict for currentV2b: a disclosure is bound to a proof only if this one is sound (V6)
 let currentProofSha256 = null; // SHA-256 of the exact bytes of the dropped proof file (null if it could not be computed)
 let currentReport = null; // the exportable verification report for the last v2b run
@@ -177,7 +178,7 @@ function refreshReport(result, options, doc, proofSha256) {
 }
 async function runV2b() {
   if (!currentV2b) return;
-  const gen = ++generation, doc = currentV2b, proofSha256 = currentProofSha256; // frozen for this run
+  const gen = ++generation, doc = currentV2bText || currentV2b, proofSha256 = currentProofSha256; // frozen for this run
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
     blockMerkleRoot: optRoot.value.trim() || undefined,
     fetchBlock: optFetch.checked && !optRoot.value.trim() };
@@ -276,7 +277,7 @@ async function handleFile(file) {
     return;
   }
   generation++; // a verification still running belongs to the file being replaced: its result must not be shown
-  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport();
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bText = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport();
   if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }
@@ -285,8 +286,11 @@ async function handleFile(file) {
     let proofBytes = null;
     try { proofBytes = new Uint8Array(await file.arrayBuffer()); currentProofSha256 = await ChainDBoMReport.sha256Hex(proofBytes); } catch { currentProofSha256 = null; }
     if (drop !== dropSeq) return;
-    try { ChainDBoMV2b.checkNumberLiterals(new TextDecoder('utf-8').decode(proofBytes)); } catch (error) { // V8: same refusal as the Python reference
-      currentV2b = null; currentProofSha256 = null;
+    try {
+      currentV2bText = new TextDecoder('utf-8', { fatal: true }).decode(proofBytes);
+      ChainDBoMV2b.checkNumberLiterals(currentV2bText); // V8: same refusal as the Python reference (verify() repeats it)
+    } catch (error) {
+      currentV2b = null; currentV2bText = null; currentProofSha256 = null;
       show('error', 'Fichier de preuve refusé : ' + ((error && error.message) || 'nombre ambigu') + '.');
       return;
     }

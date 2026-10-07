@@ -77,6 +77,13 @@ MAX_OTS_DEPTH = 300
 MAX_OTS_MESSAGE_BYTES = 4096  # a real proof's running message stays far below; hexlify (0xF3) doubles it at each step
 
 LEVELS = ["INVALIDE", "INTEGRITE", "ENGAGEMENT_OTS", "ATTESTATION_BITCOIN", "BLOC_CONFIRME"]
+LEVEL_MEANING = [
+    "invalide",
+    "intégrité interne seulement : aucune antériorité",
+    "engagement OpenTimestamps déclaré par le fichier : aucune antériorité prouvée",
+    "attestation Bitcoin déclarée par le fichier, bloc non contrôlé : aucune antériorité prouvée",
+    "bloc Bitcoin contrôlé : antériorité établie",
+]
 REQUIRE_TO_LEVEL = {"integrity": 1, "ots": 2, "attestation": 3, "bitcoin": 4}
 
 _HEX64 = re.compile(r"[0-9a-f]{64}\Z")
@@ -552,6 +559,10 @@ def _summary(checks: list[dict]) -> dict:
                 if status.get("bitcoin_block") == "pass":
                     level = 4
     return {"checks": checks, "failed": failed, "level": LEVELS[level], "level_rank": level,
+            # V3: ENGAGEMENT_OTS and ATTESTATION_BITCOIN only mean that the FILE declares them; a file fabricated offline
+            # reaches them too. Only BLOC_CONFIRME (block checked against an explorer or a given Merkle root) is proof.
+            "level_meaning": LEVEL_MEANING[level],
+            "antecedence_established": level == 4,
             "signing_key_authenticated": status.get("signing_key_trust") == "pass",
             "dbom_checked": status.get("record_hash_vs_dbom") == "pass"}
 
@@ -573,6 +584,10 @@ def main(argv=None) -> int:
                              "ATTENTION : seul « bitcoin » (bloc contrôlé) vaut antériorité ; « ots » et « attestation » "
                              "reposent sur des déclarations du fichier, qu'un fichier fabriqué hors ligne satisfait aussi")
     args = parser.parse_args(argv)
+    if args.require in ("ots", "attestation"):
+        print(f"AVERTISSEMENT : --require {args.require} ne prouve aucune antériorité (le fichier se contente de la déclarer, "
+              "un fichier fabriqué hors ligne y répond aussi) ; utilisez --require bitcoin avec --fetch-block ou "
+              "--block-merkle-root.", file=sys.stderr)
 
     try:
         with open(args.input, "rb") as handle:
