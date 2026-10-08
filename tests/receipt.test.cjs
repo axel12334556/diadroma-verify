@@ -18,11 +18,23 @@ const FP = expected.fingerprint;
 (async () => {
   assert.ok(Object.keys(expected.single).length >= 20);
   for (const [name, want] of Object.entries(expected.single)) {
-    let accepted = true;
-    try { await V2B.checkReceipt(load(name), FP); } catch (e) { accepted = false; }
-    assert.equal(accepted, want.ok, name + ': accepted/refused like the reference');
-    const list = await V2B.checkReceipts(load(name), { trustedFingerprint: FP });
-    assert.equal(list.ok, want.ok, name + ': same verdict through checkReceipts');
+    const text = fs.readFileSync(path.join(dir, name + '.json'), 'utf8');
+    if (!want.needs_raw_text) {
+      let accepted = true;
+      try { await V2B.checkReceipt(load(name), FP); } catch (e) { accepted = false; }
+      assert.equal(accepted, want.ok, name + ': accepted/refused like the reference');
+    }
+    // The page passes the raw text: integers written like decimals (1.0, 1e0) are refused, like the Python reference (R1).
+    const list = await V2B.checkReceipts(JSON.parse(text), { trustedFingerprint: FP, rawText: text });
+    assert.equal(list.ok, want.ok, name + ': same verdict through checkReceipts with the raw text');
+  }
+  // The three decimal-written files do parse (JSON.parse reads 1.0 as 1): only the raw text gives them away.
+  for (const name of ['client_sequence_1_0', 'client_sequence_1e0', 'format_version_1_0']) {
+    assert.equal(expected.single[name].needs_raw_text, true);
+    const text = fs.readFileSync(path.join(dir, name + '.json'), 'utf8');
+    const refused = await V2B.checkReceipts(JSON.parse(text), { trustedFingerprint: FP, rawText: text });
+    assert.equal(refused.ok, false);
+    assert.match(refused.checks[0].detail, /entier écrit comme un décimal/);
   }
 
   // Same receipt, no trusted fingerprint: never "ok", trust reported as skipped.

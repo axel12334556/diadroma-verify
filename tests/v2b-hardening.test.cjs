@@ -17,6 +17,14 @@ const clone = name => JSON.parse(fs.readFileSync('tests/vectors/v2b/' + name, 'u
   assert.equal(unknownAuthor.cls, 'unsupported');
   assert.match(unknownAuthor.title, /auteur non authentifié/);
   for (const level of ['INVALIDE', 'INTEGRITE', 'ENGAGEMENT_OTS', 'ATTESTATION_BITCOIN']) assert.equal(T.levelText(level, false), T.LEVEL_TEXT[level]);
+  // R4: a proof whose only failure is the key-revocation check is "doubtful", not "invalid"; any other failure stays invalid.
+  const doubtful = T.levelText('INVALIDE', true, ['key_revocation']);
+  assert.equal(doubtful.title, 'Preuve douteuse');
+  assert.match(doubtful.text, /pas la preuve d'une falsification/);
+  assert.equal(T.levelText('INVALIDE', true, ['key_revocation', 'link_hash']), T.LEVEL_TEXT.INVALIDE);
+  assert.equal(T.levelText('INVALIDE', true, ['merkle_inclusion']), T.LEVEL_TEXT.INVALIDE);
+  assert.equal(T.levelText('INVALIDE', true, []), T.LEVEL_TEXT.INVALIDE);
+  assert.equal(T.levelText('INVALIDE', true), T.LEVEL_TEXT.INVALIDE);
 
   // V7: the eight small-order points, their sign variants and non-canonical encodings are refused; a normal key is not.
   const weak = ['01' + '00'.repeat(31), '00'.repeat(32), '00'.repeat(31) + '80', '01' + '00'.repeat(30) + '80', 'ec' + 'ff'.repeat(30) + '7f',

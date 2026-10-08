@@ -39,6 +39,7 @@ let currentProofSha256 = null; // SHA-256 of the exact bytes of the dropped proo
 let currentReport = null; // the exportable verification report for the last v2b run
 let memorizedFor = null; // client dont l'empreinte vient de la mémoire de cet appareil (null sinon)
 let currentDisclosure = null; // disclosure package dropped by the recipient (never decrypted by this page)
+let currentReceiptsText = null; // raw text of the receipts file: numbers written like decimals are refused like the Python reference (R1)
 let currentReceipts = null; // signed receipts dropped by the client (checked against the service key fingerprint typed by the user)
 let cardData = null; // the validated key card object, needed to check the supplier's signature
 let cardClientId = null; // client of the key card that filled the fingerprint (null when typed by hand)
@@ -80,7 +81,7 @@ function el(tag, className, text) {
 }
 function renderV2b(result) {
   const T = ChainDBoMV2bText;
-  const level = T.levelText(result.level, result.signing_key_authenticated);
+  const level = T.levelText(result.level, result.signing_key_authenticated, result.failed);
   v2bReport.replaceChildren();
   const banner = el('div', 'banner ' + level.cls);
   banner.append(el('strong', '', level.title), el('p', '', level.text));
@@ -197,7 +198,7 @@ async function runReceipts() {
   if (!currentReceipts) return;
   const gen = generation;
   let result;
-  try { result = await ChainDBoMV2b.checkReceipts(currentReceipts, { trustedFingerprint: optServiceFp.value.trim() || undefined, proof: receiptProof() }); }
+  try { result = await ChainDBoMV2b.checkReceipts(currentReceipts, { trustedFingerprint: optServiceFp.value.trim() || undefined, proof: receiptProof(), rawText: currentReceiptsText === null ? undefined : currentReceiptsText }); }
   catch { result = { ok: false, checks: [{ id: 'structure', status: 'fail', detail: 'La vérification a échoué de façon inattendue.' }], facts: null }; }
   if (gen !== generation) return;
   receiptReport.append(el('h2', '', 'Reçus signés du service'));
@@ -349,6 +350,7 @@ async function handleFile(file) {
   if (isReceiptFile(data)) { // signed receipts: checked next to the proof (kept), never replacing it
     output.hidden = true;
     currentReceipts = data;
+    try { currentReceiptsText = await file.text(); } catch { currentReceipts = null; currentReceiptsText = null; show('error', 'Impossible de relire ce fichier de reçus.'); return; } // fail closed: no raw text, no verdict
     v2bPanel.hidden = false;
     await runReceipts();
     return;
@@ -361,7 +363,7 @@ async function handleFile(file) {
     return;
   }
   generation++; // a verification still running belongs to the file being replaced: its result must not be shown
-  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bText = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport(); currentReceipts = null; receiptReport.hidden = true;
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bText = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport(); currentReceipts = null; currentReceiptsText = null; receiptReport.hidden = true;
   if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }

@@ -18,7 +18,12 @@
   // SOMEONE's file existed by then (anyone can sign a manifest carrying a real client_id and timestamp it themselves).
   const UNAUTHENTICATED_BLOC = { title: 'Antériorité confirmée, auteur non authentifié', cls: 'unsupported',
     text: "Cette empreinte existait au plus tard au moment du bloc Bitcoin indiqué, mais rien n'établit qui l'a signée : sans l'empreinte de confiance obtenue auprès du client (sa fiche de clé), un tiers a pu fabriquer ce fichier avec sa propre clé. Ne l'attribuez pas au client." };
-  function levelText(level, keyAuthenticated) {
+  // R4: when the ONLY failed check is the key-revocation one, the proof is not forged: it is doubtful (the key may already have
+  // been compromised when it was anchored, or the block time is unknown). The level stays INVALIDE, the wording says so.
+  const DOUBTFUL = { title: 'Preuve douteuse', cls: 'unsupported',
+    text: "Le fichier est cohérent par ailleurs, mais avec la date de compromission saisie, rien n'établit que la clé n'était pas déjà compromise quand la preuve a été ancrée (ou l'heure du bloc Bitcoin est inconnue). Ce n'est pas la preuve d'une falsification : la preuve n'est simplement pas retenue. Voir le détail du contrôle « Ancrage antérieur à la compromission de la clé »." };
+  function levelText(level, keyAuthenticated, failed) {
+    if (level === 'INVALIDE' && Array.isArray(failed) && failed.length > 0 && failed.every(id => id === 'key_revocation')) return DOUBTFUL;
     return level === 'BLOC_CONFIRME' && !keyAuthenticated ? UNAUTHENTICATED_BLOC : LEVEL_TEXT[level];
   }
   const CHECK_LABELS = {

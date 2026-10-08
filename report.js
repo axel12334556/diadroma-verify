@@ -33,7 +33,7 @@
     if (Object.prototype.toString.call(generatedAt) !== '[object Date]' || Number.isNaN(generatedAt.getTime())) throw new Error('date invalide');
     const manifest = manifestOf(proofDoc), anchor = (proofDoc && proofDoc.anchor) || {};
     const given = inputs || {};
-    const level = T.levelText(result.level, result.signing_key_authenticated === true);
+    const level = T.levelText(result.level, result.signing_key_authenticated === true, result.failed);
     return {
       format: REPORT_FORMAT,
       format_version: 1,

@@ -112,7 +112,7 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       await page.fill('#optRevokedTime', '12:00');
       await page.selectOption('#optRevokedZone', 'utc');
       await page.click('#rerun');
-      await page.waitForFunction(() => /non valide ou incomplète/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
+      await page.waitForFunction(() => /Preuve douteuse/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
       assert.match(await page.locator('#v2bReport').innerText(), /heure du bloc[\s\S]*douteuse/);
       // Read from Blockstream (block time 1790000000, September 2026) and compromised later: cleared, green again.
       await page.fill('#optBlockRoot', '');
@@ -123,7 +123,7 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       // Compromised before the block was mined: doubtful again.
       await page.fill('#optRevoked', '2026-09-01');
       await page.click('#rerun');
-      await page.waitForFunction(() => /non valide ou incomplète/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
+      await page.waitForFunction(() => /Preuve douteuse/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
       assert.match(await page.locator('#v2bReport').innerText(), /à partir de[\s\S]*douteuse/);
       assert.deepEqual(problems, []);
       await context.close();
@@ -190,6 +190,11 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       await page.waitForFunction(() => /Reçus authentiques/.test(document.querySelector('#receiptReport .banner').textContent));
       await page.fill('#optServiceFp', '00'.repeat(32));
       await page.waitForFunction(() => /Reçus non vérifiés/.test(document.querySelector('#receiptReport .banner').textContent));
+      // R1: an integer written like a decimal (1.0) is refused by the page, like the Python reference does.
+      await drop(page, path.resolve('tests/vectors/receipt/client_sequence_1_0.json'));
+      await page.fill('#optServiceFp', fp);
+      await page.waitForFunction(() => /Reçus non vérifiés/.test(document.querySelector('#receiptReport .banner').textContent));
+      assert.match(await page.locator('#receiptReport').innerText(), /entier écrit comme un décimal/);
       await drop(page, path.resolve('tests/vectors/receipt/signed_by_another_key.json'));
       await page.fill('#optServiceFp', fp);
       await page.waitForFunction(() => /Reçus non vérifiés/.test(document.querySelector('#receiptReport .banner').textContent));
