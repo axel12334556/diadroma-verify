@@ -153,6 +153,23 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       assert.match(await row.locator('.state').innerText(), /Non vérifié/);
       await context.close();
     }
+    // D5: signed receipts are checked against the service-key fingerprint typed by the user; without it they prove nothing.
+    {
+      const { context, page } = await open(0);
+      const fp = JSON.parse(fs.readFileSync('tests/vectors/receipt/expected.json', 'utf8')).fingerprint;
+      await drop(page, path.resolve('tests/vectors/receipt/valid.json'));
+      await page.waitForSelector('#receiptReport .check');
+      assert.match(await page.locator('#receiptReport .banner').innerText(), /Reçus non vérifiés/);
+      assert.match(await page.locator('#receiptReport li.check', { hasText: 'Clé du service' }).locator('.state').innerText(), /Non vérifié/);
+      await page.fill('#optServiceFp', fp);
+      await page.waitForFunction(() => /Reçus authentiques/.test(document.querySelector('#receiptReport .banner').textContent));
+      await page.fill('#optServiceFp', '00'.repeat(32));
+      await page.waitForFunction(() => /Reçus non vérifiés/.test(document.querySelector('#receiptReport .banner').textContent));
+      await drop(page, path.resolve('tests/vectors/receipt/signed_by_another_key.json'));
+      await page.fill('#optServiceFp', fp);
+      await page.waitForFunction(() => /Reçus non vérifiés/.test(document.querySelector('#receiptReport .banner').textContent));
+      await context.close();
+    }
     // Control: the same slow file alone does reach the confirmed level (the simulation is faithful).
     {
       const { context, page } = await open(300);

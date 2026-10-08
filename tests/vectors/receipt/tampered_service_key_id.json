@@ -1,0 +1,13 @@
+{
+  "body": {
+    "client_id": "564c9447-dda4-45af-9c02-c3151fc9ade4",
+    "client_sequence": 1,
+    "format_version": 1,
+    "link_hash": "fdb8626af9e350fcd8919771ad6fcb5b355b3c08da686cfed60ccff1bd0436ad",
+    "received_at": "2026-10-08T08:01:30.123456Z",
+    "service_key_id": "other-key",
+    "service_public_key_hex": "677d37f9a5fdc0a0197834d8f89c5d723c81b0e871bbedc1809fb89950994560",
+    "submission_id": "15399513-cf2d-4552-b7ab-2801ac849512"
+  },
+  "signature_b64": "oVTH163EP32nnCiTTG8IFKVLMQwpOznhs5TKnO0GHrMY3b7QGtMZC24OYdfszrc3k1YOYk5k5Sd9rPQd0LAHCQ=="
+}

@@ -16,6 +16,8 @@ const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
 const dbomView = document.getElementById('dbomView');
 const disclosureReport = document.getElementById('disclosureReport');
+const receiptReport = document.getElementById('receiptReport');
+const optServiceFp = document.getElementById('optServiceFp');
 const reportMeta = document.getElementById('reportMeta');
 const reportActions = document.getElementById('reportActions');
 const reportDownload = document.getElementById('reportDownload');
@@ -34,6 +36,7 @@ let currentProofSha256 = null; // SHA-256 of the exact bytes of the dropped proo
 let currentReport = null; // the exportable verification report for the last v2b run
 let memorizedFor = null; // client dont l'empreinte vient de la mémoire de cet appareil (null sinon)
 let currentDisclosure = null; // disclosure package dropped by the recipient (never decrypted by this page)
+let currentReceipts = null; // signed receipts dropped by the client (checked against the service key fingerprint typed by the user)
 let cardData = null; // the validated key card object, needed to check the supplier's signature
 let cardClientId = null; // client of the key card that filled the fingerprint (null when typed by hand)
 
@@ -153,6 +156,51 @@ async function runDisclosure() {
   if (result.ok) disclosureReport.append(el('p', 'dbom-note', "Pour lire le contenu : déchiffrez le paquet avec votre identité age grâce à l'outil de ChainDBoM (dbom_v2_disclosure open), puis déposez le DBoM en clair dans « DBoM en clair » ci-dessus."));
   disclosureReport.hidden = false;
 }
+const RECEIPT_LABELS = { structure: 'Structure des reçus', service_key_trust: 'Clé du service authentifiée', signature: 'Signatures des reçus',
+  sequence: 'Numéros de séquence', proof_binding: 'Rattachement à la preuve' };
+function receiptProof() {
+  // Bound only to a sound proof with an authenticated key (like V6 for disclosures).
+  if (!currentV2b || !currentV2bResult || currentV2bResult.level_rank < 1 || !currentV2bResult.signing_key_authenticated) return undefined;
+  const l = currentV2b.proof_only && currentV2b.proof_only.link, m = currentV2b.proof_only && currentV2b.proof_only.submission && currentV2b.proof_only.submission.signed_manifest;
+  return l && m ? { clientId: l.client_id, submissionId: l.submission_id, clientSequence: l.client_sequence, linkHash: l.link_hash } : undefined;
+}
+// Checks signed receipts: that the service signed them with the key whose fingerprint the user got elsewhere. Nothing else is claimed.
+async function runReceipts() {
+  receiptReport.replaceChildren(); receiptReport.hidden = true;
+  if (!currentReceipts) return;
+  const gen = generation;
+  let result;
+  try { result = await ChainDBoMV2b.checkReceipts(currentReceipts, { trustedFingerprint: optServiceFp.value.trim() || undefined, proof: receiptProof() }); }
+  catch { result = { ok: false, checks: [{ id: 'structure', status: 'fail', detail: 'La vérification a échoué de façon inattendue.' }], facts: null }; }
+  if (gen !== generation) return;
+  receiptReport.append(el('h2', '', 'Reçus signés du service'));
+  const banner = el('div', 'banner ' + (result.ok ? 'success' : 'error'));
+  banner.append(el('strong', '', result.ok ? 'Reçus authentiques' : 'Reçus non vérifiés'),
+    el('p', '', result.ok ? "Le service a signé ces reçus avec la clé dont vous avez l'empreinte : il a bien reçu ces envois à ces dates. Un reçu ne prouve ni l'antériorité Bitcoin ni le contenu."
+      : "Ne vous appuyez pas sur ces reçus : l'un des contrôles ci-dessous n'est pas réussi."));
+  receiptReport.append(banner);
+  if (!optServiceFp.value.trim()) receiptReport.append(el('p', 'notice', "Saisissez l'empreinte de la clé de reçus du service, obtenue par un canal extérieur au serveur : un reçu ne peut pas se valider lui-même."));
+  if (result.facts) {
+    const rows = el('dl', 'dbom-rows');
+    const add = (label, value) => { const item = el('div'); item.append(el('dt', '', label), el('dd', '', value)); rows.append(item); };
+    add('Reçus', String(result.facts.count)); add('Clients', String(result.facts.clients));
+    add('Premier reçu', result.facts.first_received_at); add('Dernier reçu', result.facts.last_received_at);
+    receiptReport.append(rows);
+  }
+  const list = el('ul', 'checks');
+  for (const check of result.checks) {
+    const item = el('li', 'check ' + (check.status === 'warn' ? 'skipped' : check.status));
+    item.append(el('span', 'mark', DISCLOSURE_MARK[check.status]), el('span', 'label', RECEIPT_LABELS[check.id] || check.id),
+      el('span', 'state', DISCLOSURE_STATUS[check.status]), el('span', 'detail', check.detail));
+    list.append(item);
+  }
+  receiptReport.append(list);
+  receiptReport.hidden = false;
+}
+function isReceiptFile(data) {
+  const one = x => x && typeof x === 'object' && !Array.isArray(x) && 'body' in x && 'signature_b64' in x;
+  return Array.isArray(data) ? data.length > 0 && data.every(one) : one(data);
+}
 function clearReport() { currentReport = null; reportMeta.replaceChildren(); reportActions.hidden = true; }
 // Builds the exportable report. It never receives the DBoM bytes: only whether one was provided.
 function refreshReport(result, options, doc, proofSha256) {
@@ -203,6 +251,7 @@ async function runV2b() {
     refreshMemory(result);
     renderDbom(result, options.dbomBytes);
     await runDisclosure();
+    await runReceipts();
   } catch { if (gen === generation) show('error', 'La vérification a échoué de façon inattendue.'); }
 }
 function proofClientId(doc) {
@@ -270,6 +319,13 @@ async function handleFile(file) {
     show('success', "Fiche de clé chargée : l'empreinte est prête. Déposez maintenant le fichier de preuve.");
     return;
   }
+  if (isReceiptFile(data)) { // signed receipts: checked next to the proof (kept), never replacing it
+    output.hidden = true;
+    currentReceipts = data;
+    v2bPanel.hidden = false;
+    await runReceipts();
+    return;
+  }
   if (data && data.manifest && data.manifest.format === 'chaindbom-disclosure-v1') { // a disclosure package: checked, never decrypted here
     output.hidden = true;
     currentDisclosure = data;
@@ -278,7 +334,7 @@ async function handleFile(file) {
     return;
   }
   generation++; // a verification still running belongs to the file being replaced: its result must not be shown
-  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bText = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport();
+  v2bReport.hidden = true; v2bPanel.hidden = true; dbomView.hidden = true; currentV2b = null; currentV2bText = null; currentV2bResult = null; currentLegacy = null; currentProofSha256 = null; clearReport(); currentReceipts = null; receiptReport.hidden = true;
   if (!file || file.size > MAX_FILE_BYTES) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Fichier absent ou trop volumineux (maximum 1 Mo).'); return; }
   show('pending', 'Lecture du fichier en cours…');
   if (data === undefined) { currentDisclosure = null; disclosureReport.hidden = true; show('error', 'Impossible de lire ce fichier JSON.'); return; }
@@ -321,7 +377,7 @@ async function runLegacy() {
   } catch { if (gen === generation) show('error', 'Impossible de vérifier ce fichier.'); }
 }
 input.addEventListener('change', () => { if (input.files.length) handleFile(input.files[0]); });
-rerun.addEventListener('click', async () => { if (currentV2b) await runV2b(); else if (currentLegacy) await runLegacy(); else await runDisclosure(); });
+rerun.addEventListener('click', async () => { if (currentV2b) await runV2b(); else if (currentLegacy) await runLegacy(); else if (currentDisclosure) await runDisclosure(); else await runReceipts(); });
 optCard.addEventListener('change', async () => {
   if (!optCard.files.length) { clearCard(); return; }
   const data = await readJson(optCard.files[0], MAX_CARD_BYTES);
@@ -329,6 +385,7 @@ optCard.addEventListener('change', async () => {
   if (await applyKeyCard(data)) { if (currentV2b) await runV2b(); else await runDisclosure(); }
 });
 optKey.addEventListener('input', () => { if (currentDisclosure && !currentV2b) runDisclosure(); memorizedFor = null; memoryBox.hidden = true; if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
+optServiceFp.addEventListener('input', () => { if (currentReceipts) runReceipts(); });
 optRoot.addEventListener('input', () => { optFetch.disabled = optRoot.value.trim() !== ''; });
 ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('dragover'); }));
