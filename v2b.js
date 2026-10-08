@@ -351,6 +351,149 @@
       fingerprint_sha256: card.signing_key_fingerprint_sha256, created_at: card.created_at, self_signature: selfSignature };
   }
 
+  // ------------------------------------------------------------------ server receipt (D5)
+  // The service's signed statement "client C, submission S, got number N, link hash H, at time T"
+  // (chaindbom/v2b_receipt.py, which tests/tools/reference/v2b_receipt.py copies). A receipt cannot validate itself:
+  // it is accepted only with a fingerprint obtained OUTSIDE the server (contract, paper, the operator's public page).
+  const RECEIPT_DOMAIN = enc.encode('ChainDBoM:v2:receipt\0');
+  const RECEIPT_TOP_KEYS = ['body', 'signature_b64'];
+  const RECEIPT_BODY_KEYS = ['format_version', 'client_id', 'submission_id', 'client_sequence', 'link_hash', 'received_at',
+    'service_key_id', 'service_public_key_hex'];
+  const RECEIPT_INSTANT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+  const RECEIPT_KEY_ID_RE = /^[A-Za-z0-9._-]{1,64}$/;
+  const SIGNATURE_B64_RE = /^[A-Za-z0-9+/]{86}==$/; // exactly 64 bytes, canonical padding (like Python's validate=True)
+  const MAX_RECEIPTS = 5000;
+
+  function checkReceiptStructure(receipt) {
+    exactKeys(receipt, RECEIPT_TOP_KEYS, 'reçu');
+    const body = exactKeys(receipt.body, RECEIPT_BODY_KEYS, 'corps du reçu');
+    if (body.format_version !== 1) throw new FormatError('version de reçu non prise en charge');
+    for (const field of ['client_id', 'submission_id']) {
+      if (typeof body[field] !== 'string' || !UUID_RE.test(body[field])) throw new FormatError(field + ' doit être un UUID canonique en minuscules');
+    }
+    // Python accepts sequences up to 2^63 - 1; JSON numbers beyond 2^53 lose precision here, so the page refuses them (stricter, never laxer).
+    if (!isInt(body.client_sequence, 1)) throw new FormatError('client_sequence doit être un entier >= 1');
+    for (const field of ['link_hash', 'service_public_key_hex']) {
+      if (typeof body[field] !== 'string' || !HEX64.test(body[field])) throw new FormatError(field + ' doit compter 64 caractères hexadécimaux minuscules');
+    }
+    if (typeof body.received_at !== 'string' || !RECEIPT_INSTANT_RE.test(body.received_at)) throw new FormatError('received_at doit être un instant UTC avec microsecondes');
+    if (typeof body.service_key_id !== 'string' || !RECEIPT_KEY_ID_RE.test(body.service_key_id)) throw new FormatError('service_key_id invalide');
+    if (typeof receipt.signature_b64 !== 'string' || !SIGNATURE_B64_RE.test(receipt.signature_b64)) throw new FormatError('signature_b64 invalide');
+    return body;
+  }
+  function fromBase64(text) {
+    const raw = root.atob(text);
+    const out = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+  // Like Python's verify_receipt: returns the body only if the receipt is well formed, carries the TRUSTED key and verifies.
+  async function checkReceipt(receipt, trustedFingerprint) {
+    if (typeof trustedFingerprint !== 'string' || !HEX64.test(trustedFingerprint)) throw new FormatError("l'empreinte de confiance doit compter 64 caractères hexadécimaux minuscules");
+    const body = checkReceiptStructure(receipt);
+    const publicKey = fromHex(body.service_public_key_hex, 'service_public_key_hex');
+    if (hasSmallOrder(publicKey)) throw new FormatError("clé publique d'ordre faible refusée");
+    if (hex(await sha256(publicKey)) !== trustedFingerprint) throw new Error('reçu signé par une autre clé que celle de confiance');
+    let valid;
+    try {
+      const key = await root.crypto.subtle.importKey('raw', publicKey, { name: 'Ed25519' }, false, ['verify']);
+      valid = await root.crypto.subtle.verify({ name: 'Ed25519' }, key, fromBase64(receipt.signature_b64), concat(RECEIPT_DOMAIN, enc.encode(jcs(body))));
+    } catch (error) {
+      if (error && error.name === 'NotSupportedError') { const e = new Error('Ed25519 non pris en charge par ce navigateur'); e.unsupported = true; throw e; }
+      throw new Error('clé publique du reçu invalide');
+    }
+    if (!valid) throw new Error('signature du reçu invalide');
+    return JSON.parse(JSON.stringify(body));
+  }
+  // A page-level check of one file: a receipt, or a list of receipts. Never throws; every check is reported separately.
+  async function checkReceipts(data, options) {
+    options = options || {};
+    const checks = [];
+    const items = Array.isArray(data) ? data : [data];
+    if (items.length < 1 || items.length > MAX_RECEIPTS) {
+      checks.push({ id: 'structure', status: 'fail', detail: 'Le fichier doit contenir de 1 à ' + MAX_RECEIPTS + ' reçus.' });
+      return { ok: false, checks, facts: null };
+    }
+    const bodies = [];
+    try { for (const item of items) bodies.push(checkReceiptStructure(item)); }
+    catch (error) {
+      checks.push({ id: 'structure', status: 'fail', detail: error.message });
+      return { ok: false, checks, facts: null };
+    }
+    checks.push({ id: 'structure', status: 'pass', detail: bodies.length + ' reçu(s) de structure valide' });
+
+    let trusted = null;
+    if (options.trustedFingerprint) {
+      try { trusted = normalizeFingerprint(options.trustedFingerprint); } catch (error) { checks.push({ id: 'service_key_trust', status: 'fail', detail: error.message }); }
+    }
+    if (trusted) {
+      const strangers = new Set();
+      for (const body of bodies) {
+        const publicKey = fromHex(body.service_public_key_hex, 'service_public_key_hex');
+        if (hex(await sha256(publicKey)) !== trusted || hasSmallOrder(publicKey)) strangers.add(body.service_key_id);
+      }
+      checks.push(strangers.size ? { id: 'service_key_trust', status: 'fail',
+        detail: "Au moins un reçu est signé par une clé qui n'est pas celle dont vous avez l'empreinte (" + Array.from(strangers).slice(0, 3).join(', ') + ').' }
+        : { id: 'service_key_trust', status: 'pass', detail: "Tous les reçus portent la clé du service dont vous avez l'empreinte" });
+    } else if (!checks.some(c => c.id === 'service_key_trust')) {
+      checks.push({ id: 'service_key_trust', status: 'skipped', detail: "Saisissez l'empreinte de la clé du service, obtenue hors du serveur : sans elle, un reçu ne prouve rien." });
+    }
+
+    let unsupported = false, invalid = 0, firstInvalid = null;
+    for (let i = 0; i < items.length; i++) {
+      try {
+        const key = await root.crypto.subtle.importKey('raw', fromHex(bodies[i].service_public_key_hex, 'clé'), { name: 'Ed25519' }, false, ['verify']);
+        if (hasSmallOrder(fromHex(bodies[i].service_public_key_hex, 'clé')) ||
+          !(await root.crypto.subtle.verify({ name: 'Ed25519' }, key, fromBase64(items[i].signature_b64), concat(RECEIPT_DOMAIN, enc.encode(jcs(bodies[i])))))) {
+          invalid++; if (firstInvalid === null) firstInvalid = i + 1;
+        }
+      } catch (error) {
+        if (error && error.name === 'NotSupportedError') { unsupported = true; break; }
+        invalid++; if (firstInvalid === null) firstInvalid = i + 1;
+      }
+    }
+    if (unsupported) checks.push({ id: 'signature', status: 'skipped', detail: 'Ce navigateur ne gère pas Ed25519 : signatures non vérifiées.' });
+    else if (invalid) checks.push({ id: 'signature', status: 'fail', detail: invalid + ' reçu(s) à la signature invalide (le premier : n° ' + firstInvalid + ' dans le fichier).' });
+    else checks.push({ id: 'signature', status: 'pass', detail: 'Signatures Ed25519 valides' });
+
+    // Sequence numbers held, per client: two different receipts for one number is a contradiction; a hole is only a warning
+    // (you may simply not hold the receipts in between).
+    const byClient = new Map();
+    let conflict = null;
+    for (const body of bodies) {
+      const seen = byClient.get(body.client_id) || new Map();
+      byClient.set(body.client_id, seen);
+      const earlier = seen.get(body.client_sequence);
+      if (earlier && (earlier.link_hash !== body.link_hash || earlier.submission_id !== body.submission_id) && !conflict) {
+        conflict = 'Deux reçus différents pour le numéro ' + body.client_sequence + " d'un même client.";
+      }
+      seen.set(body.client_sequence, body);
+    }
+    const holes = [];
+    for (const [client, seen] of byClient) {
+      const numbers = Array.from(seen.keys()).sort((a, b) => a - b);
+      for (let i = 1; i < numbers.length; i++) if (numbers[i] !== numbers[i - 1] + 1) holes.push('entre ' + numbers[i - 1] + ' et ' + numbers[i]);
+    }
+    if (conflict) checks.push({ id: 'sequence', status: 'fail', detail: conflict });
+    else if (holes.length) checks.push({ id: 'sequence', status: 'warn', detail: 'Numéros manquants parmi vos reçus ' + holes.slice(0, 5).join(' ; ') + " : si vous deviez en avoir d'autres, réclamez-les au service." });
+    else checks.push({ id: 'sequence', status: 'pass', detail: 'Numéros de séquence consécutifs' });
+
+    if (options.proof) {
+      const proof = options.proof;
+      const same = bodies.filter(b => b.client_id === proof.clientId && b.submission_id === proof.submissionId);
+      if (!same.length) checks.push({ id: 'proof_binding', status: 'skipped', detail: 'Aucun reçu pour la preuve actuellement ouverte.' });
+      else if (same.every(b => b.client_sequence === proof.clientSequence && b.link_hash === proof.linkHash)) {
+        checks.push({ id: 'proof_binding', status: 'pass', detail: 'Le reçu correspond au maillon de la preuve (numéro ' + proof.clientSequence + ')' });
+      } else checks.push({ id: 'proof_binding', status: 'fail', detail: 'Le reçu et la preuve décrivent le même envoi avec un numéro ou un condensat différent.' });
+    }
+
+    const times = bodies.map(b => b.received_at).sort();
+    const facts = { count: bodies.length, clients: byClient.size, service_key_ids: Array.from(new Set(bodies.map(b => b.service_key_id))),
+      first_received_at: times[0], last_received_at: times[times.length - 1] };
+    const ok = checks.every(c => c.status !== 'fail') && ['structure', 'service_key_trust', 'signature'].every(id => (checks.find(c => c.id === id) || {}).status === 'pass');
+    return { ok, checks, facts };
+  }
+
   // ------------------------------------------------------------------ disclosure package (chaindbom-disclosure-v1)
   // The page never decrypts. It checks the supplier's authorisation: strict structure, trusted key (key card whose
   // fingerprint matches the one the supplier published), Ed25519 signature, ciphertext hash, binding to the proof,
@@ -643,5 +786,5 @@
       signing_key_authenticated: status.signing_key_trust === 'pass', dbom_checked: status.record_hash_vs_dbom === 'pass' };
   }
 
-  root.ChainDBoMV2b = { checkNumberLiterals, hasSmallOrder, verify, checkKeyCard, checkDisclosure, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
+  root.ChainDBoMV2b = { checkReceipt, checkReceipts, checkNumberLiterals, hasSmallOrder, verify, checkKeyCard, checkDisclosure, formatFingerprint, jcs, parseOts, normalizeFingerprint, LEVELS, KEYCARD_FORMAT };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

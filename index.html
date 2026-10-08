@@ -43,6 +43,8 @@
 <label for="optRevoked">Date de compromission de la clé, si le client a publié un avis de révocation (facultatif)</label>
 <input id="optRevoked" type="text" autocomplete="off" spellcheck="false" placeholder="2026-10-05T12:00:00Z ou 2026-10-05">
 <p class="notice">Avec cette date, la preuve n'est retenue que si son bloc Bitcoin est daté au moins 2 heures avant ; sinon elle est douteuse. Il faut alors lire le bloc auprès de Blockstream (case ci-dessus) : la racine saisie à la main ne donne pas l'heure du bloc.</p>
+<label for="optServiceFp">Empreinte de la clé de reçus du service ChainDBoM, obtenue hors du serveur (pour vérifier des reçus signés)</label>
+<input id="optServiceFp" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux, séparateurs acceptés">
 <label for="optDbom">DBoM en clair, fourni par le client (JSON) : pour vérifier qu'il correspond à la preuve</label>
 <input id="optDbom" type="file" accept=".json,application/json">
 <button id="rerun" type="button">Relancer la vérification</button>
@@ -56,6 +58,7 @@
 </div>
 <section id="dbomView" class="dbom" hidden></section>
 <section id="disclosureReport" class="dbom" hidden></section>
+<section id="receiptReport" class="dbom" hidden></section>
 </main>
 </body>
 </html>
