@@ -118,6 +118,22 @@ def main():
             expected["single"][name] = {"ok": True, "body": ref.verify_receipt(value, trusted_fingerprint=fingerprint)}
         except ref.ReceiptError:
             expected["single"][name] = {"ok": False}
+    # Integers written like decimals: JSON.parse reads 1.0 as the integer 1, Python as a float. The reference refuses them
+    # (not a positive integer / unsupported version), so the page must too: it checks the RAW text (needs_raw_text).
+    valid_text = files["valid.json"]
+    for name, (before, after) in {
+        "client_sequence_1_0": ('"client_sequence": 1', '"client_sequence": 1.0'),
+        "client_sequence_1e0": ('"client_sequence": 1', '"client_sequence": 1e0'),
+        "format_version_1_0": ('"format_version": 1', '"format_version": 1.0'),
+    }.items():
+        assert before in valid_text
+        text = valid_text.replace(before, after, 1)
+        files[f"{name}.json"] = text
+        try:
+            ref.verify_receipt(json.loads(text), trusted_fingerprint=fingerprint)
+            expected["single"][name] = {"ok": True, "needs_raw_text": True}
+        except ref.ReceiptError:
+            expected["single"][name] = {"ok": False, "needs_raw_text": True}
     for name, value in lists.items():
         files[f"{name}.json"] = json.dumps(value, indent=2, sort_keys=True) + "\n"
         bodies = [ref.verify_receipt(r, trusted_fingerprint=fingerprint) for r in value]
@@ -137,7 +153,7 @@ def main():
     if args.check and (changed or stale):
         print("receipt vectors out of date:", changed, stale)
         sys.exit(1)
-    print(f"{len(vectors)} reçus, {sum(1 for e in expected['single'].values() if e['ok'])} valides, {len(lists)} listes ; fichiers mis à jour : {changed}")
+    print(f"{len(vectors) + 3} reçus, {sum(1 for e in expected['single'].values() if e['ok'])} valides, {len(lists)} listes ; fichiers mis à jour : {changed}")
 
 
 if __name__ == "__main__":

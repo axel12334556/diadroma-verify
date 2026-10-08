@@ -22,10 +22,22 @@
     "bad_key_id": {
       "ok": false
     },
+    "client_sequence_1_0": {
+      "needs_raw_text": true,
+      "ok": false
+    },
+    "client_sequence_1e0": {
+      "needs_raw_text": true,
+      "ok": false
+    },
     "extra_body_field": {
       "ok": false
     },
     "extra_top_field": {
+      "ok": false
+    },
+    "format_version_1_0": {
+      "needs_raw_text": true,
       "ok": false
     },
     "instant_with_space": {

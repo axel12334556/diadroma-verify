@@ -409,6 +409,14 @@
   async function checkReceipts(data, options) {
     options = options || {};
     const checks = [];
+    // R1: an integer written like a decimal (1.0, 1e0) is read by JSON.parse as the integer, by Python as a float and refused.
+    // Same refusal as the reference, on the RAW text (the page passes it; the parsed value alone cannot tell).
+    if (typeof options.rawText === 'string') {
+      try { checkNumberLiterals(options.rawText); } catch (error) {
+        checks.push({ id: 'structure', status: 'fail', detail: error.message });
+        return { ok: false, checks, facts: null };
+      }
+    }
     const items = Array.isArray(data) ? data : [data];
     if (items.length < 1 || items.length > MAX_RECEIPTS) {
       checks.push({ id: 'structure', status: 'fail', detail: 'Le fichier doit contenir de 1 à ' + MAX_RECEIPTS + ' reçus.' });
