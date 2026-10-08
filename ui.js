@@ -11,7 +11,10 @@ const optCard = document.getElementById('optKeyCard');
 const cardStatus = document.getElementById('cardStatus');
 const optFetch = document.getElementById('optFetchBlock');
 const optRoot = document.getElementById('optBlockRoot');
-const optRevoked = document.getElementById('optRevoked');
+const optRevoked = document.getElementById('optRevoked'); // <input type="date">
+const optRevokedTime = document.getElementById('optRevokedTime'); // <input type="time">, optional
+const optRevokedZone = document.getElementById('optRevokedZone');
+const revokedRead = document.getElementById('revokedRead');
 const optDbom = document.getElementById('optDbom');
 const rerun = document.getElementById('rerun');
 const dbomView = document.getElementById('dbomView');
@@ -40,6 +43,30 @@ let currentReceipts = null; // signed receipts dropped by the client (checked ag
 let cardData = null; // the validated key card object, needed to check the supplier's signature
 let cardClientId = null; // client of the key card that filled the fingerprint (null when typed by hand)
 
+// Date de compromission saisie avec des sélecteurs (pas de texte libre). Retourne '' si rien n'est saisi, une date
+// "AAAA-MM-JJ" (début de journée UTC, lecture prudente) ou un instant UTC "AAAA-MM-JJTHH:MM:00Z". Une heure sans date
+// donne une valeur volontairement illisible : le contrôle échoue au lieu d'ignorer en silence la révocation.
+function compromiseValue() {
+  const date = (optRevoked.value || '').trim(), time = (optRevokedTime.value || '').trim();
+  if (!date) return time ? 'heure sans date' : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date; // navigateur sans sélecteur de date : la valeur est rejetée par le contrôle si elle est mal formée
+  if (!time) return date;
+  if (!/^\d{2}:\d{2}$/.test(time)) return date + 'T' + time; // rejeté par le contrôle
+  if (optRevokedZone.value === 'utc') return date + 'T' + time + ':00Z';
+  const [y, m, d] = date.split('-').map(Number), [hh, mm] = time.split(':').map(Number);
+  const local = new Date(y, m - 1, d, hh, mm);
+  if (local.getFullYear() !== y || local.getMonth() !== m - 1 || local.getDate() !== d) return 'date impossible';
+  return local.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+function describeCompromise() {
+  const value = compromiseValue();
+  if (!value) { revokedRead.hidden = true; revokedRead.textContent = ''; return; }
+  let text;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) text = 'Lu comme : le ' + value.split('-').reverse().join('/') + ' à 00:00 UTC (début de la journée, lecture prudente).';
+  else if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(value)) text = 'Lu comme : le ' + value.slice(0, 10).split('-').reverse().join('/') + ' à ' + value.slice(11, 16) + ' UTC.';
+  else text = value === 'heure sans date' ? "Une heure est saisie sans date : choisissez aussi la date, sinon la vérification échouera." : "Date non lisible : elle fera échouer le contrôle de révocation.";
+  revokedRead.textContent = text; revokedRead.hidden = false;
+}
 function show(status, msg) {
   output.textContent = msg;
   output.className = status;
@@ -208,7 +235,7 @@ function refreshReport(result, options, doc, proofSha256) {
   if (!proofSha256) return;
   try {
     currentReport = ChainDBoMReport.buildReport({ result, proofDoc: doc, proofSha256, generatedAt: new Date(),
-      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), trustedFingerprint: options.reportFingerprint, trustedFingerprintSource: options.reportFingerprintSource, keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(), compromisedSince: optRevoked.value.trim() || null,
+      inputs: { trustedFingerprintProvided: !!optKey.value.trim(), trustedFingerprint: options.reportFingerprint, trustedFingerprintSource: options.reportFingerprintSource, keyCardProvided: !!cardClientId, blockRootProvided: !!optRoot.value.trim(), compromisedSince: compromiseValue() || null,
         blockReadFromBlockstream: !!options.fetchBlock, dbomProvided: !!options.dbomBytes } });
   } catch { return; }
   const r = currentReport, rows = el('dl', 'dbom-rows');
@@ -229,7 +256,7 @@ async function runV2b() {
   if (!currentV2b) return;
   const gen = ++generation, doc = currentV2bText || currentV2b, proofSha256 = currentProofSha256; // frozen for this run
   const options = { trustedKeyFingerprint: optKey.value.trim() || undefined, trustedClientId: cardClientId || undefined,
-    blockMerkleRoot: optRoot.value.trim() || undefined, compromisedSince: optRevoked.value.trim() || undefined,
+    blockMerkleRoot: optRoot.value.trim() || undefined, compromisedSince: compromiseValue() || undefined,
     fetchBlock: optFetch.checked && !optRoot.value.trim() };
   const fingerprint = currentFingerprint(); // V9: the report states which fingerprint was used and where it came from
   options.reportFingerprint = fingerprint;
@@ -386,6 +413,7 @@ optCard.addEventListener('change', async () => {
 });
 optKey.addEventListener('input', () => { if (currentDisclosure && !currentV2b) runDisclosure(); memorizedFor = null; memoryBox.hidden = true; if (cardClientId) { cardClientId = null; cardStatus.hidden = true; } }); // typed by hand: no longer from a card
 optServiceFp.addEventListener('input', () => { if (currentReceipts) runReceipts(); });
+[optRevoked, optRevokedTime, optRevokedZone].forEach(node => node.addEventListener('input', describeCompromise));
 optRoot.addEventListener('input', () => { optFetch.disabled = optRoot.value.trim() !== ''; });
 ['dragenter', 'dragover'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.add('dragover'); }));
 ['dragleave', 'drop'].forEach(type => dropzone.addEventListener(type, event => { event.preventDefault(); dropzone.classList.remove('dragover'); }));

@@ -41,7 +41,12 @@
 <input id="optBlockRoot" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux">
 <label class="check-option"><input id="optFetchBlock" type="checkbox"> Ou lire le bloc auprès de Blockstream (blockstream.info). Cette requête révèle à Blockstream la hauteur du bloc, jamais le contenu de la preuve. Sans cette case, aucune requête n'est envoyée.</label>
 <label for="optRevoked">Date de compromission de la clé, si le client a publié un avis de révocation (facultatif)</label>
-<input id="optRevoked" type="text" autocomplete="off" spellcheck="false" placeholder="2026-10-05T12:00:00Z ou 2026-10-05">
+<div class="date-row">
+<input id="optRevoked" type="date" autocomplete="off" aria-describedby="revokedRead">
+<input id="optRevokedTime" type="time" step="60" autocomplete="off" aria-label="Heure de compromission (facultatif)">
+<select id="optRevokedZone" aria-label="Fuseau horaire de l'heure saisie"><option value="local">Heure de cet ordinateur</option><option value="utc">UTC</option></select>
+</div>
+<p id="revokedRead" class="notice" hidden></p>
 <p class="notice">Avec cette date, la preuve n'est retenue que si son bloc Bitcoin est daté au moins 2 heures avant ; sinon elle est douteuse. Il faut alors lire le bloc auprès de Blockstream (case ci-dessus) : la racine saisie à la main ne donne pas l'heure du bloc.</p>
 <label for="optServiceFp">Empreinte de la clé de reçus du service ChainDBoM, obtenue hors du serveur (pour vérifier des reçus signés)</label>
 <input id="optServiceFp" type="text" autocomplete="off" spellcheck="false" placeholder="64 caractères hexadécimaux, séparateurs acceptés">
