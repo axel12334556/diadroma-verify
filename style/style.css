@@ -53,6 +53,9 @@ h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; }
 .options h2 { margin-top: 0; }
 .options label { display: block; margin-top: 1.1rem; font-size: .92rem; }
 .options input[type=text] { display: block; width: 100%; margin-top: .4rem; padding: .65rem .8rem; font: inherit; font-family: var(--police-mono); font-size: .85rem; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 12px; }
+.options .date-row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .4rem; }
+.options .date-row input, .options .date-row select { padding: .6rem .8rem; font: inherit; font-size: .9rem; color: var(--texte); background: var(--fond); border: 1px solid var(--trait); border-radius: 12px; }
+.options .date-row input:focus, .options .date-row select:focus { outline: none; border-color: var(--menthe); box-shadow: 0 0 0 4px color-mix(in srgb, var(--menthe) 25%, transparent); }
 .options input[type=file] { display: block; margin-top: .4rem; max-width: 100%; color: var(--texte-doux); }
 .options .check-option { display: flex; gap: .6rem; align-items: flex-start; color: var(--texte-doux); }
 /* Boutons : pastilles marine, léger relief au survol, enfoncement au clic */

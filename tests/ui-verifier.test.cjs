@@ -29,8 +29,8 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
   if (process.env.CHROME_PATH) launch.executablePath = process.env.CHROME_PATH;
   const browser = await playwright.chromium.launch(launch);
   try {
-    const open = async delayMs => {
-      const context = await browser.newContext({ serviceWorkers: 'block', locale: 'fr-FR' });
+    const open = async (delayMs, timezoneId) => {
+      const context = await browser.newContext({ serviceWorkers: 'block', locale: 'fr-FR', ...(timezoneId ? { timezoneId } : {}) });
       const blockstream = [], problems = [];
       await context.route('**/*', async route => {
         const url = route.request().url();
@@ -108,7 +108,9 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       // V9: the report names the fingerprint and where it came from.
       assert.match(await page.locator('#reportMeta').textContent(), /Empreinte de confiance utilisée[\s\S]*saisie à la main/);
       // N4: with the date of a key compromise, a typed block root gives no block time: the proof turns doubtful.
-      await page.fill('#optRevoked', '2026-12-31T12:00:00Z');
+      await page.fill('#optRevoked', '2026-12-31');
+      await page.fill('#optRevokedTime', '12:00');
+      await page.selectOption('#optRevokedZone', 'utc');
       await page.click('#rerun');
       await page.waitForFunction(() => /non valide ou incomplète/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
       assert.match(await page.locator('#v2bReport').innerText(), /heure du bloc[\s\S]*douteuse/);
@@ -123,6 +125,29 @@ const OLD_BLOCK = { hash: 'ab'.repeat(32), height: 969034, merkle_root: 'b7489a9
       await page.click('#rerun');
       await page.waitForFunction(() => /non valide ou incomplète/.test((document.querySelector('#v2bReport .banner') || {}).textContent || ''));
       assert.match(await page.locator('#v2bReport').innerText(), /à partir de[\s\S]*douteuse/);
+      assert.deepEqual(problems, []);
+      await context.close();
+    }
+    // Compromise date: pickers, not free text. The page shows how it read the date; a time without a date is never ignored.
+    {
+      const { context, page, problems } = await open(0, 'Europe/Paris');
+      await drop(page, REAL);
+      await page.waitForSelector('#v2bReport .banner');
+      assert.equal(await page.locator('#optRevoked').getAttribute('type'), 'date');
+      assert.equal(await page.locator('#optRevokedTime').getAttribute('type'), 'time');
+      await page.fill('#optRevoked', '2026-10-08');
+      assert.match(await page.locator('#revokedRead').innerText(), /08\/10\/2026 à 00:00 UTC/);
+      await page.fill('#optRevokedTime', '17:30');
+      await page.selectOption('#optRevokedZone', 'local'); // Paris in October: UTC+2
+      assert.match(await page.locator('#revokedRead').innerText(), /08\/10\/2026 à 15:30 UTC/);
+      await page.selectOption('#optRevokedZone', 'utc');
+      assert.match(await page.locator('#revokedRead').innerText(), /08\/10\/2026 à 17:30 UTC/);
+      await page.fill('#optRevoked', '');
+      assert.match(await page.locator('#revokedRead').innerText(), /sans date/);
+      await page.click('#rerun');
+      await page.waitForFunction(() => /illisible/.test((document.querySelector('#v2bReport') || {}).textContent || ''));
+      await page.fill('#optRevokedTime', '');
+      assert.equal(await page.locator('#revokedRead').isHidden(), true);
       assert.deepEqual(problems, []);
       await context.close();
     }
